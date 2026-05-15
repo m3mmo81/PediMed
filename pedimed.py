@@ -42,8 +42,9 @@ with col1:
     drug_name = st.selectbox("Odaberite lijek:", list(DRUG_DATABASE.keys()))
 
 with col2:
-    # Dodajemo labelu "Starost djeteta" iznad kolona za godine/mjesece da izravnamo sa "Težina djeteta"
-    st.markdown("**Starost djeteta:**")
+    # Dodajemo naslov za starost djeteta sa malim razmakom iznad (padding) da se poravna sa "Težina djeteta"
+    st.markdown("<div style='margin-bottom: 5px;'><b>Starost djeteta:</b></div>", unsafe_allow_html=True)
+    
     age_col1, age_col2 = st.columns(2)
     with age_col1:
         years = st.number_input("Godine", min_value=0, max_value=18, value=2)
@@ -51,6 +52,9 @@ with col2:
         extra_months = st.number_input("Mjeseci", min_value=0, max_value=11, value=0)
     
     total_months = (years * 12) + extra_months
+    
+    # Dodajemo labelu za vrijeme da se poravna sa "Odaberite lijek"
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
     start_time = st.time_input("Vrijeme prve doze:", value=datetime.now().time())
 
 data = DRUG_DATABASE[drug_name]
