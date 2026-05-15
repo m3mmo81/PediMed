@@ -7,7 +7,7 @@ DRUG_DATABASE = {
         "dnevna_mg_kg": 60, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
         "tip": "sirup", "napomena": "Razmak min 4h. Max 4 doze u 24h."
     },
-    "Neofen / Ibuprofen (100mg/5ml)": {
+    "Neofen / Ibuprofen sirup (100mg/5ml)": {
         "dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_5ml": 100, "interval": 6, 
         "tip": "sirup", "napomena": "Razmak min 4h. Dojenčad 3-12 mj: max 3 doze."
     },
@@ -124,9 +124,21 @@ if st.button("IZRAČUNAJ"):
         st.write("- **Opća napomena:** Ne miješati s drugim lijekovima iste aktivne tvari.")
         st.write("- U slučaju pogoršanja simptoma, odmah kontaktirati ljekara.")
 
-# --- DISCLAIMER I KONTAKT SEKCIJA ---
+# --- DUGI DISCLAIMER I KONTAKT SEKCIJA ---
 st.divider()
-st.warning("⚠️ **VAŽNA NAPOMENA (DISCLAIMER):**")
-st.write("PediMed ne predstavlja zamjenu za ljekarski savjet. Uvijek se konsultujte sa ljekarom prije primjene.")
-st.markdown(f"📩 Kontakt: [**www.drkarabeg.ba**](https://drkarabeg.ba)")
-st.caption(f"© {datetime.now().year} dr. Karabeg | PediMed Safe v1.5")
+
+with st.container():
+    st.warning("⚠️ **VAŽNA NAPOMENA (DISCLAIMER):**")
+    st.write("""
+    Ova aplikacija je isključivo informativnog karaktera i služi kao pomoć pri izračunu doza prema uputama proizvođača. 
+    **PediMed ne predstavlja zamjenu za ljekarski savjet, dijagnozu ili liječenje.** Uvijek se konsultujte sa ljekarom ili farmaceutom prije davanja bilo kojeg lijeka djetetu. 
+    Korištenjem ove aplikacije prihvatate da autor ne snosi odgovornost za eventualne greške u primjeni lijeka.
+    """)
+
+st.markdown(f"""
+---
+📩 **Trebate savjet ili imate pitanje?** Možete me kontaktirati direktno putem kontakt forme na mojoj stranici:  
+[**www.drkarabeg.ba**](https://drkarabeg.ba)
+""", unsafe_allow_html=True)
+
+st.caption(f"© {datetime.now().year} dr. Karabeg | PediMed Safe v1.5 | Uvijek provjerite doze sa ljekarom.")
