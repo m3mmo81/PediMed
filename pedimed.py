@@ -26,7 +26,7 @@ DRUG_DATABASE = {
 }
 
 st.set_page_config(page_title="PediMed Dozator", page_icon="💊")
-st.title("💊 PediMed: Kalkulator Doziranja")
+st.title("💊 PediMed: Kalkulator Doziranja Pedijatrijskih Lijekova")
 
 # 1. UNOS PODATAKA
 col1, col2 = st.columns(2)
