@@ -39,8 +39,19 @@ col1, col2 = st.columns(2)
 with col1:
     weight = st.number_input("Težina djeteta (kg):", min_value=1.0, max_value=120.0, value=12.0)
     drug_name = st.selectbox("Odaberite lijek:", list(DRUG_DATABASE.keys()))
+
 with col2:
-    age_months = st.number_input("Starost (mjeseci):", min_value=0, max_value=156, value=24)
+    # --- NOVI UNOS STAROSTI U DVIJE KOLONE ---
+    st.write("**Starost djeteta:**")
+    age_col1, age_col2 = st.columns(2)
+    with age_col1:
+        years = st.number_input("Godine", min_value=0, max_value=18, value=2)
+    with age_col2:
+        extra_months = st.number_input("Mjeseci", min_value=0, max_value=11, value=0)
+    
+    # Ukupna starost u mjesecima za logiku kalkulatora
+    total_months = (years * 12) + extra_months
+    
     start_time = st.time_input("Vrijeme prve doze:", value=datetime.now().time())
 
 data = DRUG_DATABASE[drug_name]
@@ -52,8 +63,8 @@ if st.button("IZRAČUNAJ"):
     max_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     
-    # Prilagođavanje za Paracetamol (2-3mj)
-    if "Paracetamol" in drug_name and 2 <= age_months <= 3:
+    # Prilagođavanje za Paracetamol (2-3mj) prema uputstvu
+    if "Paracetamol" in drug_name and 2 <= total_months <= 3:
         broj_doza = 2
         max_mg_24h = (weight * 15) * 2 
     
@@ -106,8 +117,8 @@ with st.container():
 
 st.markdown(f"""
 ---
-📩 **Trebate savjet ili imate pitanje?** Možete me kontaktirati direktno putem kontakt forme na mojoj web stranici:  
+📩 **Trebate savjet ili imate pitanje?** Možete me kontaktirati direktno putem kontakt forme na mojoj stranici:  
 [**www.drkarabeg.ba**](https://drkarabeg.ba)
 """, unsafe_allow_html=True)
 
-st.caption(f"© {datetime.now().year} Created by Karabeg dr Kemal | PediMed Safe v1.2 |")
+st.caption(f"© {datetime.now().year} dr. Karabeg | PediMed Safe v1.3 | Uvijek provjerite doze sa ljekarom.")
