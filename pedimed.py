@@ -106,7 +106,7 @@ with st.container():
 
 st.markdown(f"""
 ---
-📩 **Trebate savjet ili imate pitanje?** Možete me kontaktirati direktno putem kontakt forme na mojoj stranici:  
+📩 **Trebate savjet ili imate pitanje?** Možete me kontaktirati direktno putem kontakt forme na mojoj web stranici:  
 [**www.drkarabeg.ba**](https://drkarabeg.ba)
 """, unsafe_allow_html=True)
 
