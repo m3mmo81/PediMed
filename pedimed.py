@@ -27,7 +27,7 @@ DRUG_DATABASE = {
     "Cefaleksin (250mg/5ml)": {"dnevna_mg_kg": 50, "max_dan_fiksno": 4000, "mg_u_5ml": 250, "interval": 8, "tip": "antibiotik", "napomena": ""},
 }
 
-st.set_page_config(page_title="PediMed Safe", page_icon="⚖️")
+st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="centered")
 
 # --- POZDRAVNA PORUKA ---
 st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
@@ -36,22 +36,21 @@ st.title("⚖️ PediMed: Pedijatrijski Kalkulator Lijekova")
 
 # 1. UNOS PODATAKA
 col1, col2 = st.columns(2)
+
 with col1:
     weight = st.number_input("Težina djeteta (kg):", min_value=1.0, max_value=120.0, value=12.0)
     drug_name = st.selectbox("Odaberite lijek:", list(DRUG_DATABASE.keys()))
 
 with col2:
-    # --- NOVI UNOS STAROSTI U DVIJE KOLONE ---
-    st.write("**Starost djeteta:**")
+    # Dodajemo labelu "Starost djeteta" iznad kolona za godine/mjesece da izravnamo sa "Težina djeteta"
+    st.markdown("**Starost djeteta:**")
     age_col1, age_col2 = st.columns(2)
     with age_col1:
         years = st.number_input("Godine", min_value=0, max_value=18, value=2)
     with age_col2:
         extra_months = st.number_input("Mjeseci", min_value=0, max_value=11, value=0)
     
-    # Ukupna starost u mjesecima za logiku kalkulatora
     total_months = (years * 12) + extra_months
-    
     start_time = st.time_input("Vrijeme prve doze:", value=datetime.now().time())
 
 data = DRUG_DATABASE[drug_name]
@@ -63,7 +62,7 @@ if st.button("IZRAČUNAJ"):
     max_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     
-    # Prilagođavanje za Paracetamol (2-3mj) prema uputstvu
+    # Prilagođavanje za Paracetamol (2-3mj)
     if "Paracetamol" in drug_name and 2 <= total_months <= 3:
         broj_doza = 2
         max_mg_24h = (weight * 15) * 2 
