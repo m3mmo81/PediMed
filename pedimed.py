@@ -107,7 +107,7 @@ with st.container():
 st.markdown(f"""
 ---
 📩 **Trebate savjet ili imate pitanje?** Možete me kontaktirati direktno putem kontakt forme na mojoj stranici:  
-[**www.drkarabeg.ba/kontakt**](https://drkarabeg.ba/kontakt)
+[**www.drkarabeg.ba**](https://drkarabeg.ba)
 """, unsafe_allow_html=True)
 
 st.caption(f"© {datetime.now().year} dr. Karabeg | PediMed Safe v1.2 | Uvijek provjerite doze sa ljekarom.")
