@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 # --- BAZA PODATAKA SA LIMITIMA ---
 DRUG_DATABASE = {
-    "Paracetamol JGL sirup (120mg/5ml)": {
+    "Paracetamol sirup (120mg/5ml)": {
         "dnevna_mg_kg": 60,
         "max_dan_fiksno": 4000,
         "mg_u_5ml": 120,
