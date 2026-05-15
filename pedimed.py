@@ -110,4 +110,4 @@ st.markdown(f"""
 [**www.drkarabeg.ba**](https://drkarabeg.ba)
 """, unsafe_allow_html=True)
 
-st.caption(f"© {datetime.now().year} Created by Karabeg dr Kemal | PediMed Safe v1.2 | Uvijek provjerite doze sa ljekarom.")
+st.caption(f"© {datetime.now().year} Created by Karabeg dr Kemal | PediMed Safe v1.2 |")
