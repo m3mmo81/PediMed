@@ -28,6 +28,10 @@ DRUG_DATABASE = {
 }
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️")
+
+# --- POZDRAVNA PORUKA ---
+st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
+
 st.title("⚖️ PediMed: Pedijatrijski Kalkulator Lijekova")
 
 # 1. UNOS PODATAKA
@@ -89,4 +93,21 @@ if st.button("IZRAČUNAJ"):
         st.write("- Ako temperatura i dalje raste, obavezno kontaktirati ljekara.")
         st.write("- Voditi računa da se djetetu ne daje više lijekova sa istom aktivnom tvari istovremeno.")
 
-st.caption("PediMed Safe v1.0 | Uvijek provjerite doze sa ljekarom.")
+# --- DISCLAIMER I KONTAKT SEKCIJA ---
+st.divider()
+
+with st.container():
+    st.warning("⚠️ **VAŽNA NAPOMENA (DISCLAIMER):**")
+    st.write("""
+    Ova aplikacija je isključivo informativnog karaktera i služi kao pomoć pri izračunu doza prema uputama proizvođača. 
+    **PediMed ne predstavlja zamjenu za ljekarski savjet, dijagnozu ili liječenje.** Uvijek se konsultujte sa ljekarom ili farmaceutom prije davanja bilo kojeg lijeka djetetu. 
+    Korištenjem ove aplikacije prihvatate da autor ne snosi odgovornost za eventualne greške u primjeni lijeka.
+    """)
+
+st.markdown(f"""
+---
+📩 **Trebate savjet ili imate pitanje?** Možete me kontaktirati direktno putem kontakt forme na mojoj stranici:  
+[**www.drkarabeg.ba/kontakt**](https://drkarabeg.ba/kontakt)
+""", unsafe_allow_html=True)
+
+st.caption(f"© {datetime.now().year} dr. Karabeg | PediMed Safe v1.2 | Uvijek provjerite doze sa ljekarom.")
