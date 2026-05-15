@@ -12,7 +12,7 @@ DRUG_DATABASE = {
         "tip": "sirup", "napomena": "Razmak min 4h. Dojenčad 3-12 mj: max 3 doze."
     },
     "Paracetamol čepići (80mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 800, "mg_u_jedinici": 80, "interval": 6, "tip": "supozitorija", "napomena": ""},
-    "LUPOCET BABY čepići (120mg)": {
+    "Paracetamol čepići (120mg)": {
         "dnevna_mg_kg": 60, "max_dan_fiksno": 1000, "mg_u_jedinici": 120, "interval": 6, 
         "tip": "supozitorija", 
         "napomena": "Isključivo cijeli čepići (ne lomiti). Nije prikladno u slučaju proljeva."
