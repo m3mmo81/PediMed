@@ -25,8 +25,6 @@ DRUG_DATABASE = {
         "napomena": "Ne koristiti za djecu <6kg. Razmak min 6-8h. Ne lomiti čepiće."
     },
     "Ibuprofen čepići (125mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_jedinici": 125, "interval": 8, "tip": "supozitorija", "napomena": ""},
-    "Ospen / Penicilin V (250mg/5ml)": {"dnevna_mg_kg": 50, "max_dan_fiksno": 3000, "mg_u_5ml": 250, "interval": 8, "tip": "antibiotik", "napomena": "1h prije ili 2h poslije jela."},
-    "Cefaleksin (250mg/5ml)": {"dnevna_mg_kg": 50, "max_dan_fiksno": 4000, "mg_u_5ml": 250, "interval": 8, "tip": "antibiotik", "napomena": ""},
 }
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="centered")
@@ -71,8 +69,8 @@ if st.button("IZRAČUNAJ"):
     max_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     
-    # Specifična logika za LUPOCET BABY 120mg
-    if drug_name == "LUPOCET BABY čepići (120mg)":
+    # Specifična logika za LUPOCET BABY / Paracetamol 120mg
+    if drug_name == "Paracetamol čepići (120mg)":
         if 8 <= weight < 10:
             pojedinacna_mg = 120
             doza_ispis = "1 čepić (120 mg)"
@@ -93,7 +91,7 @@ if st.button("IZRAČUNAJ"):
             max_mg_24h = (weight * 15) * 2 
         pojedinacna_mg = max_mg_24h / broj_doza
         
-        if data["tip"] in ["sirup", "antibiotik"]:
+        if data["tip"] == "sirup":
             final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
             doza_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
         else:
