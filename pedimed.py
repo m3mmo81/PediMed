@@ -12,14 +12,18 @@ DRUG_DATABASE = {
         "tip": "sirup", "napomena": "Razmak min 4h. Dojenčad 3-12 mj: max 3 doze."
     },
     "Paracetamol čepići (80mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 800, "mg_u_jedinici": 80, "interval": 6, "tip": "supozitorija", "napomena": ""},
-    "Paracetamol čepići (120mg)": {
+    "LUPOCET BABY čepići (120mg)": {
         "dnevna_mg_kg": 60, "max_dan_fiksno": 1000, "mg_u_jedinici": 120, "interval": 6, 
         "tip": "supozitorija", 
         "napomena": "Isključivo cijeli čepići (ne lomiti). Nije prikladno u slučaju proljeva."
     },
     "Paracetamol čepići (150mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 1200, "mg_u_jedinici": 150, "interval": 6, "tip": "supozitorija", "napomena": ""},
     "Paracetamol čepići (250mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 2000, "mg_u_jedinici": 250, "interval": 6, "tip": "supozitorija", "napomena": ""},
-    "Ibuprofen čepići (60mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 600, "mg_u_jedinici": 60, "interval": 8, "tip": "supozitorija", "napomena": ""},
+    "Ibuprofen čepići (60mg)": {
+        "dnevna_mg_kg": 30, "max_dan_fiksno": 600, "mg_u_jedinici": 60, "interval": 8, 
+        "tip": "supozitorija", 
+        "napomena": "Ne koristiti za djecu <6kg. Razmak min 6-8h. Ne lomiti čepiće."
+    },
     "Ibuprofen čepići (125mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_jedinici": 125, "interval": 8, "tip": "supozitorija", "napomena": ""},
     "Ospen / Penicilin V (250mg/5ml)": {"dnevna_mg_kg": 50, "max_dan_fiksno": 3000, "mg_u_5ml": 250, "interval": 8, "tip": "antibiotik", "napomena": "1h prije ili 2h poslije jela."},
     "Cefaleksin (250mg/5ml)": {"dnevna_mg_kg": 50, "max_dan_fiksno": 4000, "mg_u_5ml": 250, "interval": 8, "tip": "antibiotik", "napomena": ""},
@@ -54,6 +58,14 @@ with col2:
 data = DRUG_DATABASE[drug_name]
 
 if st.button("IZRAČUNAJ"):
+    # --- VALIDACIJA ZA IBUPROFEN ČEPIĆE 60MG ---
+    if drug_name == "Ibuprofen čepići (60mg)":
+        if weight < 6.0:
+            st.error("❌ Lijek se ne smije primjenjivati u djece tjelesne mase manje od 6,0 kg.")
+            st.stop()
+        if total_months < 3:
+            st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjeseca bez savjeta liječnika.")
+
     st.divider()
     
     max_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
@@ -65,7 +77,6 @@ if st.button("IZRAČUNAJ"):
             pojedinacna_mg = 120
             doza_ispis = "1 čepić (120 mg)"
         elif 10 <= weight <= 20:
-            # Provjera da li 2 čepića prelaze limit od 60mg/kg/dan
             if (240 * broj_doza) <= max_mg_24h:
                 pojedinacna_mg = 240
                 doza_ispis = "1 do 2 čepića (120-240 mg)"
@@ -73,10 +84,10 @@ if st.button("IZRAČUNAJ"):
                 pojedinacna_mg = 120
                 doza_ispis = "1 čepić (120 mg)"
         else:
-            pojedinacna_mg = (weight * 15) # Standardna kalkulacija van specifičnih opsega
+            pojedinacna_mg = (weight * 15)
             doza_ispis = f"{round(pojedinacna_mg, 1)} mg"
     else:
-        # Standardna logika za ostale lijekove
+        # Standardna logika
         if "Paracetamol" in drug_name and 2 <= total_months <= 3:
             broj_doza = 2
             max_mg_24h = (weight * 15) * 2 
@@ -103,16 +114,19 @@ if st.button("IZRAČUNAJ"):
     st.error(f"⚠️ **SIGURNOSNI LIMIT (24 sata):**")
     st.write(f"Za težinu od **{weight}kg**, apsolutni dnevni maksimum je **{round(max_mg_24h, 1)} mg**.")
 
-    with st.expander("ℹ️ Napomene"):
+    with st.expander("ℹ️ Važne napomene za odabrani lijek"):
         if data["napomena"]: st.info(data["napomena"])
-        st.write("- **Kontraindikacije:** Preosjetljivost na paracetamol.")
-        st.write("- **Upozorenje:** Ne miješati s drugim lijekovima koji sadrže paracetamol.")
-        st.write("- Ako temperatura raste ili u slučaju proljeva (za čepiće), kontaktirati ljekara.")
+        if drug_name == "Ibuprofen čepići (60mg)":
+            if 3 <= total_months <= 5:
+                st.warning("Ako se simptomi ne povuku unutar 24 sata, obavezno potražiti savjet liječnika.")
+            if total_months >= 6:
+                st.warning("Ako je lijek potrebno uzimati duže od 3 dana, zatražiti savjet liječnika.")
+        st.write("- **Opća napomena:** Ne miješati s drugim lijekovima iste aktivne tvari.")
+        st.write("- U slučaju pogoršanja simptoma, odmah kontaktirati ljekara.")
 
 # --- DISCLAIMER I KONTAKT SEKCIJA ---
 st.divider()
 st.warning("⚠️ **VAŽNA NAPOMENA (DISCLAIMER):**")
 st.write("PediMed ne predstavlja zamjenu za ljekarski savjet. Uvijek se konsultujte sa ljekarom prije primjene.")
-
 st.markdown(f"📩 Kontakt: [**www.drkarabeg.ba**](https://drkarabeg.ba)")
-st.caption(f"© {datetime.now().year} dr. Karabeg | PediMed Safe v1.4")
+st.caption(f"© {datetime.now().year} dr. Karabeg | PediMed Safe v1.5")
