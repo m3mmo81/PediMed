@@ -1,18 +1,16 @@
 import streamlit as st
 from datetime import datetime, timedelta
 
-# --- AŽURIRANA BAZA PODATAKA PREMA UPUTSTVU ---
+# --- BAZA PODATAKA ---
 DRUG_DATABASE = {
-    # NEOFEN/IBUPROFEN 100mg/5ml - PREMA TVOM TEKSTU
     "Neofen / Ibuprofen (100mg/5ml)": {
-        "dnevna_mg_kg": 25, # Sredina između 20-30 mg/kg
+        "dnevna_mg_kg": 25, 
         "max_pojedinacna_mg": 300,
         "mg_u_5ml": 100,
-        "interval": 6, # Može 3-4 puta, stavljamo 6h kao standard
+        "interval": 6, 
         "tip": "sirup",
-        "napomena": "Razmak između doza ne smije biti manji od 4 sata. Dojenčad 3-12 mj: max 3 puta dnevno."
+        "napomena": "Razmak ne smije biti manji od 4h. Dojenčad 3-12 mj: max 3 puta dnevno."
     },
-    # Ostali lijekovi (ostaju isti ili ih možemo ažurirati kad pošalješ tekst)
     "Paracetamol sirup (120mg/5ml)": {"dnevna_mg_kg": 60, "max_pojedinacna_mg": 1000, "mg_u_5ml": 120, "interval": 6, "tip": "sirup", "napomena": ""},
     "Paracetamol čepići (120mg)": {"dnevna_mg_kg": 60, "max_pojedinacna_mg": 120, "mg_u_jedinici": 120, "interval": 6, "tip": "supozitorija", "napomena": ""},
     "Paracetamol čepići (250mg)": {"dnevna_mg_kg": 60, "max_pojedinacna_mg": 250, "mg_u_jedinici": 250, "interval": 6, "tip": "supozitorija", "napomena": ""},
@@ -29,7 +27,7 @@ DRUG_DATABASE = {
 }
 
 st.set_page_config(page_title="PediMed Pro", page_icon="💊")
-st.title("💊 PediMed: Precizni Dozator")
+st.title("💊 PediMed: Dozator sa dvostrukom provjerom")
 
 # 1. UNOS PODATAKA
 col1, col2 = st.columns(2)
@@ -52,36 +50,36 @@ if st.button("IZRAČUNAJ"):
 
     # 2. PRIKAZ REZULTATA
     r1, r2 = st.columns(2)
+    
     if data["tip"] in ["sirup", "antibiotik"]:
         final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
-        r1.metric("Pojedinačna doza", f"{final_ml} ml")
+        # Prikaz ml i mg zajedno
+        r1.metric("Pojedinačna doza (ml + mg)", f"{final_ml} ml", f"{round(pojedinacna_mg, 1)} mg")
+        doza_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
     else:
-        r1.metric("Pojedinačna doza", "1 čepić")
+        r1.metric("Pojedinačna doza", "1 čepić", f"{data['mg_u_jedinici']} mg")
+        doza_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
         
-    r2.metric("Razmak", f"Svakih {data['interval']} h")
+    r2.metric("Razmak davanja", f"Svakih {data['interval']} h")
 
     # 3. SATNICA
-    st.subheader("⏰ Plan davanja (narednih 24h):")
+    st.subheader("⏰ Plan davanja i doze:")
     current_time = datetime.combine(datetime.today(), start_time)
     for i in range(broj_doza):
-        st.success(f"**Doza {i+1}** — u **{current_time.strftime('%H:%M')}**")
+        st.success(f"**Doza {i+1}** u **{current_time.strftime('%H:%M')}** — Doza: **{doza_ispis}**")
         current_time += timedelta(hours=data["interval"])
 
-    # 4. DINAMIČKE NAPOMENE
+    # 4. NAPOMENE
     st.divider()
-    with st.expander("ℹ️ Detaljne upute za ovaj lijek"):
-        if drug_name == "Neofen / Ibuprofen (100mg/5ml)":
-            st.write(f"**Za težinu od {weight}kg:** Doza prema uputi je {final_ml}ml.")
-            if weight < 5:
-                st.error("⚠️ Neofen se ne preporučuje djeci mlađoj od 3 mjeseca ili lakšoj od 5 kg bez konsultacije ljekara.")
-        
+    with st.expander("ℹ️ Detaljne upute"):
         if data["tip"] == "supozitorija":
             st.error("Primjena: REKTALNO (u anus).")
-            st.write("- Ako dijete ima stolicu unutar 20 min, čepić se vjerovatno nije otopio.")
         else:
-            st.write("- Ako dijete povrati sirup unutar 20 min, konsultujte ljekara o ponavljanju.")
+            st.write(f"- Za težinu od **{weight}kg**, jedna doza sadrži **{round(pojedinacna_mg, 1)} mg** aktivne tvari.")
+            st.write("- Ako dijete povrati sirup unutar 20 min, konsultujte ljekara.")
         
         if data["napomena"]:
             st.info(data["napomena"])
 
-st.caption("Podaci bazirani na službenim uputama lijekova. Uvijek provjerite sa svojim ljekarom.")
+st.caption("Uvijek provjerite dozu sa ljekarom. Aplikacija služi za informativni izračun.")
+
