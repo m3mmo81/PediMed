@@ -1,8 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta
 
-# --- BAZA PODATAKA SA MAKSIMALNIM DNEVNIM DOZAMA ---
-# Format: "Ime": [DNEVNA_mg_kg, apsolutni_max_mg_dan, mg_u_jedinici, interval, tip, napomena]
+# --- BAZA PODATAKA SA LIMITIMA ---
 DRUG_DATABASE = {
     "Paracetamol JGL sirup (120mg/5ml)": {
         "dnevna_mg_kg": 60,
@@ -10,26 +9,26 @@ DRUG_DATABASE = {
         "mg_u_5ml": 120,
         "interval": 6, 
         "tip": "sirup",
-        "napomena": "Razmak min 4h. Ne davati duže od 3 dana bez ljekara."
+        "napomena": "Razmak min 4h. Max 4 doze u 24h. Ne duže od 3 dana."
     },
     "Neofen / Ibuprofen (100mg/5ml)": {
-        "dnevna_mg_kg": 30, # Max dnevna prema uputi (20-30mg/kg)
+        "dnevna_mg_kg": 30, 
         "max_dan_fiksno": 1200,
         "mg_u_5ml": 100,
         "interval": 6, 
         "tip": "sirup",
-        "napomena": "Razmak min 4h. Dojenčad 3-12 mj: max 3 puta dnevno."
+        "napomena": "Razmak min 4h. Dojenčad 3-12 mj: max 3 doze."
     },
     "Paracetamol čepići (120mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 1000, "mg_u_jedinici": 120, "interval": 6, "tip": "supozitorija", "napomena": ""},
     "Paracetamol čepići (250mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 2000, "mg_u_jedinici": 250, "interval": 6, "tip": "supozitorija", "napomena": ""},
     "Ibuprofen čepići (60mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 600, "mg_u_jedinici": 60, "interval": 8, "tip": "supozitorija", "napomena": ""},
     "Ibuprofen čepići (125mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_jedinici": 125, "interval": 8, "tip": "supozitorija", "napomena": ""},
-    "Ospen / Penicilin V (250mg/5ml)": {"dnevna_mg_kg": 50, "max_dan_fiksno": 3000, "mg_u_5ml": 250, "interval": 8, "tip": "antibiotik", "napomena": "Uzeti 1h prije ili 2h poslije jela."},
+    "Ospen / Penicilin V (250mg/5ml)": {"dnevna_mg_kg": 50, "max_dan_fiksno": 3000, "mg_u_5ml": 250, "interval": 8, "tip": "antibiotik", "napomena": "1h prije ili 2h poslije jela."},
     "Cefaleksin (250mg/5ml)": {"dnevna_mg_kg": 50, "max_dan_fiksno": 4000, "mg_u_5ml": 250, "interval": 8, "tip": "antibiotik", "napomena": ""},
 }
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️")
-st.title("⚖️ PediMed: Sigurna Doza")
+st.title("⚖️ PediMed: Kalkulator sa Limitima")
 
 # 1. UNOS PODATAKA
 col1, col2 = st.columns(2)
@@ -42,17 +41,17 @@ with col2:
 
 data = DRUG_DATABASE[drug_name]
 
-if st.button("IZRAČUNAJ SA LIMITIMA"):
+if st.button("IZRAČUNAJ"):
     st.divider()
     
     # Izračun limita
     max_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     
-    # Prilagođavanje za Paracetamol 2-3mj
+    # Prilagođavanje za Paracetamol (2-3mj)
     if "Paracetamol" in drug_name and 2 <= age_months <= 3:
         broj_doza = 2
-        max_mg_24h = (weight * 15) * 2 # Max 15mg/kg po dozi, max 2 doze
+        max_mg_24h = (weight * 15) * 2 
     
     pojedinacna_mg = max_mg_24h / broj_doza
 
@@ -60,37 +59,34 @@ if st.button("IZRAČUNAJ SA LIMITIMA"):
     c1, c2 = st.columns(2)
     if data["tip"] in ["sirup", "antibiotik"]:
         final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
-        c1.metric("Pojedinačna doza", f"{final_ml} ml", f"{round(pojedinacna_mg, 1)} mg")
-        doza_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
         max_ml_24h = round((max_mg_24h * 5) / data["mg_u_5ml"], 1)
+        
+        c1.metric("Pojedinačna doza", f"{final_ml} ml", f"{round(pojedinacna_mg, 1)} mg")
+        c2.metric("Maksimalno u 24h", f"{max_ml_24h} ml", f"{round(max_mg_24h, 1)} mg")
+        doza_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
     else:
         c1.metric("Pojedinačna doza", "1 čepić", f"{data['mg_u_jedinici']} mg")
+        c2.metric("Maksimalno u 24h", f"{broj_doza} kom", f"{round(max_mg_24h, 1)} mg")
         doza_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
 
-    c2.metric("Maksimalno u 24h", f"{round(max_mg_24h, 1)} mg")
-
     # Satnica
-    st.subheader("⏰ Plan davanja:")
+    st.subheader("⏰ Plan davanja (24h):")
     current_time = datetime.combine(datetime.today(), start_time)
     for i in range(broj_doza):
         st.success(f"**{i+1}. doza** u **{current_time.strftime('%H:%M')}** — Doza: {doza_ispis}")
         current_time += timedelta(hours=data["interval"])
 
-    # --- NOVE NAPOMENE O LIMITIMA ---
+    # Sigurnosni limit u crvenoj zoni
     st.divider()
-    st.error(f"⚠️ **SIGURNOSNI LIMIT (24h):**")
-    
-    limit_text = f"Za dijete od {weight} kg, NE SMIJE se preći **{round(max_mg_24h, 1)} mg** u toku 24 sata."
+    st.error(f"⚠️ **SIGURNOSNI LIMIT (24 sata):**")
     if data["tip"] in ["sirup", "antibiotik"]:
-        limit_text += f" To iznosi ukupno **{max_ml_24h} ml** sirupa dnevno."
-    
-    st.write(limit_text)
-    
-    with st.expander("Pravila za prekoračenje"):
-        st.write("""
-        * Ako temperatura ne pada i približavate se maksimalnoj dnevnoj dozi, **ne povećavajte dozu na svoju ruku**.
-        * Razmislite o kombinovanju različitih grupa lijekova (npr. Paracetamol i Ibuprofen) isključivo uz konsultaciju ljekara.
-        * Prekoračenje maksimalne dnevne doze paracetamola može ozbiljno oštetiti jetru.
-        """)
+        st.write(f"Za težinu od **{weight}kg**, apsolutni dnevni maksimum je **{max_ml_24h} ml** (ukupno {round(max_mg_24h, 1)} mg).")
+    else:
+        st.write(f"Za težinu od **{weight}kg**, ne prelaziti **{broj_doza} čepića** (ukupno {round(max_mg_24h, 1)} mg) dnevno.")
 
-st.caption("Podaci su informativni. MDD (Maksimalna Dnevna Doza) je izračunata prema težini pacijenta.")
+    with st.expander("ℹ️ Napomene"):
+        if data["napomena"]: st.info(data["napomena"])
+        st.write("- Ako temperatura i dalje raste, obavezno kontaktirati ljekara.")
+        st.write("- Voditi računa da se djetetu ne daje više lijekova sa istom aktivnom tvari istovremeno.")
+
+st.caption("PediMed Safe v1.0 | Uvijek provjerite doze sa ljekarom.")
