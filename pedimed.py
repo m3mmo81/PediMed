@@ -50,11 +50,18 @@ with col2:
         extra_months = st.number_input("Mjeseci", min_value=0, max_value=11, value=0, label_visibility="collapsed")
     
     total_months = (years * 12) + extra_months
-    st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
     
-    # KOREKCIJA: Eksplicitno prosljeđivanje trenutnog vremena kao time objekta omogućava punu i laku izmjenu u UI
-    trenutno_vrijeme = datetime.now().time()
-    start_time = st.time_input("Vrijeme prve doze:", value=time(trenutno_vrijeme.hour, trenutno_vrijeme.minute))
+    # --- NOVI UNOS VREMENA PREKO DIRETKNIH POLJA (RJEŠENJE ZA SLOBODNO KUCANJE) ---
+    st.markdown("**Vrijeme prve doze (sati : minuti):**")
+    trenutno = datetime.now()
+    time_col1, time_col2 = st.columns(2)
+    with time_col1:
+        vrijeme_sati = st.number_input("Sati", min_value=0, max_value=23, value=trenutno.hour, label_visibility="collapsed")
+    with time_col2:
+        vrijeme_minuti = st.number_input("Minuti", min_value=0, max_value=59, value=trenutno.minute, label_visibility="collapsed")
+    
+    # Spajanje unesenih brojeva u time objekat za dalju logiku satnice
+    start_time = time(vrijeme_sati, vrijeme_minuti)
 
 data = DRUG_DATABASE[drug_name]
 
@@ -98,7 +105,7 @@ if st.button("IZRAČUNAJ"):
             final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
             doza_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
         else:
-            doza_ispis = f"1 čic ({data['mg_u_jedinici']} mg)"
+            doza_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
 
     # Prikaz rezultata
     c1, c2 = st.columns(2)
@@ -133,7 +140,7 @@ with st.container():
     st.write("""
     Ova aplikacija je isključivo informativnog karaktera i služi kao pomoć pri izračunu doza prema uputama proizvođača. 
     **PediMed ne predstavlja zamjenu za ljekarski savjet, dijagnozu ili liječenje.** Uvijek se konsultujte sa ljekarom ili farmaceutom prije davanja bilo kojeg lijeka djetetu. 
-    Korištenjem ove aplikacije prihvatate da autor ne snosi odgovornost za eventualne greške u primjeni lijeka.
+    Korištenjem ove aplikacije prihvatate da autor ne snesi odgovornost za eventualne greške u primjeni lijeka.
     """)
 
 st.markdown(f"""
