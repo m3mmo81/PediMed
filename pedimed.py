@@ -25,7 +25,7 @@ DRUG_DATABASE = {
         "tip": "supozitorija", 
         "napomena": "Ne koristiti za djecu <6kg. Razmak min 6-8h. Ne lomiti čepiće."
     },
-    "Ibuprofen čepići (125mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_jedinici": 125, "interval": 8, "tip": "supozitorija", "napomena": ""},
+    "Ibuprofen čepići (125mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_jedinici": 125, "interval": 8, "tip": "supozitorija", "napomena": ""}
 }
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="centered")
@@ -71,14 +71,12 @@ if st.button("IZRAČUNAJ"):
         if total_months < 3:
             st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjeseca bez savjeta liječnika.")
 
-    # --- DIREKTNA KLINIČKA VERIFIKACIJA I FILTRIRANJE ČEPIĆA (POENTA) ---
+    # --- DIREKTNA KLINIČKA VERIFIKACIJA I FILTRIRANJE ČEPIĆA ---
     if "Paracetamol čepići" in drug_name:
-        # Računamo klinički opseg pojedinačne doze kroz 4 davanja (od 30 do 40 mg/kg/dan)
         min_pojedinacna_efikasna = (weight * 30) / 4
-        max_pojedinacna_sigurna = (weight * 60) / 4 # Gornja sigurnosna granica po dozi
+        max_pojedinacna_sigurna = (weight * 60) / 4
         odabrana_jacina = data["mg_u_jedinici"]
         
-        # Izračunavanje koji su čepići na tržištu zapravo adekvatni za ovu težinu
         adekvatni_cepici = []
         if (weight * 60 / 4) >= 80 >= (weight * 30 / 4 - 15): adekvatni_cepici.append("80mg")
         if (weight * 60 / 4) >= 120 >= (weight * 30 / 4 - 20): adekvatni_cepici.append("120mg")
@@ -87,16 +85,53 @@ if st.button("IZRAČUNAJ"):
         
         preporuka_tekst = " ili ".join(adekvatni_cepici) if adekvatni_cepici else "konsultaciju sa ljekarom"
 
-        # 1. Provjera subdoziranja (ako je čepić preslab za djetetov metabolizam i težinu)
         if odabrana_jacina < min_pojedinacna_efikasna and abs(odabrana_jacina - min_pojedinacna_efikasna) > 15:
             st.error(f"❌ **Subdoziranje! Odabrani čepić ({odabrana_jacina}mg) je preslab za težinu od {weight} kg.**")
             st.info(f"💡 **Klinički savjet:** Davanje ovog čepića neće efikasno spustiti temperaturu. Za težinu vašeg djeteta, adekvatan izbor su **Paracetamol čepići od {preporuka_tekst}**.")
             st.stop()
             
-        # 2. Provjera hiperdoziranja (ako čepić samostalno probija maksimalnu sigurnu zonu od 60 mg/kg/dan)
         if odabrana_jacina > max_pojedinacna_sigurna:
             st.error(f"❌ **Previsoka doza! Odabrani čepić ({odabrana_jacina}mg) je prejak za težinu od {weight} kg.**")
             st.info(f"💡 **Klinički savjet:** Za težinu vašeg djeteta od {weight} kg, adekvatan i siguran izbor su **Paracetamol čepići od {preporuka_tekst}**.")
+            st.stop()
+
+    # --- NOVA LOGIKA: DIREKTNA VERIFIKACIJA ZA IBUPROFEN ČEPIĆE ---
+    elif "Ibuprofen čepići" in drug_name:
+        # Terapijski opseg za ibuprofen na dan je 20 do 30 mg/kg
+        min_dnevna_ibu = weight * 20
+        max_dnevna_ibu = weight * 30
+        odabrana_jacina = data["mg_u_jedinici"]
+        broj_davanja = 24 // data["interval"]  # Za ibuprofen sa intervalom 8, ovo je 3 davanja dnevno
+        
+        # Izračunavamo ukupnu dnevnu dozu koju bi dijete unijelo sa odabranim čepićem (3 čepića dnevno)
+        ukupni_dnevni_unos = odabrana_jacina * broj_davanja
+        
+        # Provjera koji čepići uopšte klinički odgovaraju za ovu težinu u rasponu 20-30 mg/kg/dan
+        adekvatni_ibu_cepici = []
+        if min_dnevna_ibu <= (60 * 3) <= max_dnevna_ibu:
+            adekvatni_ibu_cepici.append("60mg")
+        if min_dnevna_ibu <= (125 * 3) <= max_dnevna_ibu:
+            adekvatni_ibu_cepici.append("125mg")
+            
+        preporuka_ibu_tekst = " ili ".join(adekvatni_ibu_cepici) if adekvatni_ibu_cepici else None
+
+        # Ako trenutno odabrani čepić ne upada u siguran opseg od 20-30 mg/kg/dan
+        if not (min_dnevna_ibu <= ukupni_dnevni_unos <= max_dnevna_ibu):
+            st.error(f"❌ **Neodgovarajuće doziranje čepića!**")
+            
+            if ukupni_dnevni_unos < min_dnevna_ibu:
+                st.write(f"Odabrani čepić od **{odabrana_jacina}mg** daje premalu i neefikasnu dozu za težinu od {weight} kg.")
+            elif ukupni_dnevni_unos > max_dnevna_ibu:
+                st.write(f"Odabrani čepić od **{odabrana_jacina}mg** prekoračuje maksimalnu dozvoljenu dozu od **{max_dnevna_ibu:.1f} mg/dan** za težinu od {weight} kg.")
+            
+            if preporuka_ibu_tekst:
+                st.info(f"💡 **Klinički savjet:** Za težinu vašeg djeteta, u terapeutski opseg se uklapaju **Ibuprofen čepići od {preporuka_ibu_tekst}**.")
+            else:
+                st.warning(
+                    f"💡 **Klinički savjet:** S obzirom na težinu djeteta od **{weight} kg**, nijedan od dostupnih čepića na tržištu (60mg i 125mg) "
+                    f"ne može pokriti potrebe unutar sigurnog opsega (Maksimum: {max_dnevna_ibu:.1f} mg/dan).\n\n"
+                    "👉 **Preporučuje se prelazak na Neofen / Ibuprofen sirup** kako bi se doza mogla precizno izmjeriti u mililitrima!"
+                )
             st.stop()
 
     st.divider()
@@ -148,7 +183,7 @@ if st.button("IZRAČUNAJ"):
         plan_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
         
         naslov_desna = "🟩 UKUPNO KROZ 24 SATA:"
-        sadrzaj_desna = f"**Unos odabranog čepića (4x dnevno):** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
+        sadrzaj_desna = f"**Unos odabranog čepića ({broj_doza}x dnevno):** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
 
     # --- 3. PRIKAZ UGRAĐENIH STREAMLIT OKVIRA ---
     c1, c2 = st.columns(2)
@@ -199,7 +234,7 @@ with st.container():
     st.write("""
     Ova aplikacija je isključivo informativnog karaktera i služi kao pomoć pri izračunu doza prema uputama proizvođača. 
     **PediMed ne predstavlja zamjenu za ljekarski savjet, dijagnozu ili liječenje.** Uvijek se konsultujte sa ljekarom ili farmaceutom prije davanja bilo kojeg lijeka djetetu. 
-    Korištenjem ove aplikacije prihvatate da autor ne snosi odgovornost za eventualne greške u applyciranju lijeka.
+    Korištenjem ove aplikacije prihvatate da autor ne snosi odgovornost za eventualne greške u aplikaciji lijeka.
     """)
 
 st.markdown("""
