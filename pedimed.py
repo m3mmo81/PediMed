@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta, time
 
 # --- BAZA PODATAKA ---
+# "dnevna_mg_kg" je fiksirana na preporučenu terapijsku dozu (40 mg/kg za paracetamol, 20 mg/kg za ibuprofen)
 DRUG_DATABASE = {
     "Paracetamol sirup (120mg/5ml)": {
         "dnevna_mg_kg": 40, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
@@ -88,16 +89,23 @@ if st.button("IZRAČUNAJ"):
 
     st.divider()
     
-    # Terapijski proračun
+    # Terapijski proračun (na bazi 40 mg/kg za paracetamol, odnosno 20 mg/kg za ibuprofen)
     terapijska_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     pojedinacna_mg = terapijska_mg_24h / broj_doza
     
-    # --- DVOSTRUKA FORMULA I MAKSIMALNE GRANICE ZA SIRUPE ---
-    if "Paracetamol" in drug_name:
-        apsolutni_max_24h = min(weight * 60, 4000)
-        apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 120, 1) if data["tip"] == "sirup" else 0
+    # --- LOGIKA MAKSIMALNIH GRANICA I RASPONA (DVOSTRUKA FORMULA) ---
+    if "Paracetamol sirup" in drug_name:
+        # Dvostruka formula za paracetamol sirup (terapijska 40 mg/kg, maksimalna 60 mg/kg)
+        apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
+        apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 120, 1)
+        
+        max_pojedinacna_mg = apsolutni_max_24h / broj_doza
+        max_pojedinacna_ml = round((max_pojedinacna_mg * 5) / 120, 1)
+    elif "Paracetamol čepići" in drug_name:
+        apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
     elif "Ibuprofen sirup" in drug_name:
+        # Dvostruka formula za ibuprofen sirup (terapijska 20 mg/kg, maksimalna 30 mg/kg)
         apsolutni_max_24h = min(weight * 30, data["max_dan_fiksno"])
         apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 100, 1)
         
@@ -106,26 +114,27 @@ if st.button("IZRAČUNAJ"):
     else:
         apsolutni_max_24h = terapijska_mg_24h
 
-    # Formatiranje ispisa doze
+    # Formatiranje ispisa doza i naslova kartica
     if data["tip"] == "sirup":
         final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
-        if "Ibuprofen sirup" in drug_name:
+        
+        if "Paracetamol sirup" in drug_name:
+            doza_ispis = f"{final_ml} ml do {max_pojedinacna_ml} ml <span style='font-size:0.7em; color:#aaa;'>({round(pojedinacna_mg, 1)}-{round(max_pojedinacna_mg, 1)} mg)</span>"
+            plan_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg) [Preporučeno]"
+            naslov_kartice = "Raspon pojedinačne doze (40-60 mg/kg)"
+            desni_naslov = "Ukupno kroz 24h (Terapijski preporučeno)"
+        elif "Ibuprofen sirup" in drug_name:
             doza_ispis = f"{final_ml} ml do {max_pojedinacna_ml} ml <span style='font-size:0.7em; color:#aaa;'>({round(pojedinacna_mg, 1)}-{round(max_pojedinacna_mg, 1)} mg)</span>"
             plan_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg) [Preporučeno]"
             naslov_kartice = "Raspon pojedinačne doze (20-30 mg/kg)"
             desni_naslov = "Ukupno kroz 24h (Terapijski max)"
-        else:
-            doza_ispis = f"{final_ml} ml <span style='font-size:0.7em; color:#aaa;'>({round(pojedinacna_mg, 1)} mg)</span>"
-            plan_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
-            naslov_kartice = "Pojedinačna doza (Terapijska)"
-            desni_naslov = "Ukupno kroz 24h (Terapijska)"
     else:
         doza_ispis = f"1 čepić <span style='font-size:0.7em; color:#aaa;'>({data['mg_u_jedinici']} mg)</span>"
         plan_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
         naslov_kartice = "Pojedinačna doza (Terapijska)"
         desni_naslov = "Ukupno kroz 24h (Terapijska)"
 
-    # --- NOVI KOREKTOVANI PRIKAZ REZULTATA BEZ SKRAĆIVANJA TEKSTA ---
+    # --- FLEKSIBILAN PRIKAZ HTML KARTICA BEZ SKRAĆIVANJA ---
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(f"""
@@ -143,7 +152,7 @@ if st.button("IZRAČUNAJ"):
         </div>
         """, unsafe_allow_html=True)
 
-    st.write("") # Mali razmak
+    st.write("") 
 
     # Satnica
     st.subheader("⏰ Plan davanja (24h) - Na bazi preporučene doze:")
@@ -154,7 +163,7 @@ if st.button("IZRAČUNAJ"):
 
     st.divider()
     st.error(f"⚠️ **APSOLUTNI SIGURNOSNI LIMIT (Maksimalna doza):**")
-    if drug_name == "Paracetamol sirup (120mg/5ml)":
+    if "Paracetamol sirup" in drug_name:
         st.write(f"Za težinu od **{weight} kg**, apsolutni dnevni maksimum paracetamola iznosi **{apsolutni_max_ml_24h} ml** (ukupno {round(apsolutni_max_24h, 1)} mg na bazi 60 mg/kg/dan).")
     elif "Ibuprofen sirup" in drug_name:
         st.write(f"Za težinu od **{weight} kg**, maksimalna dopuštena dnevna doza ibuprofena iznosi **{apsolutni_max_ml_24h} ml** (ukupno {round(apsolutni_max_24h, 1)} mg na bazi 30 mg/kg/dan).")
