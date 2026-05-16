@@ -33,7 +33,10 @@ st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="center
 st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
 st.title("⚖️ PediMed: Pedijatrijski Kalkulator Lijekova")
 
-# 1. UNOS PODATAKA
+# Trenutno vrijeme nam treba odmah na početku radi inicijalne vrijednosti
+trenutno = datetime.now()
+
+# 1. UNOS PODATAKA WITH PERFECT ALIGNMENT (Bez markdown labele iznad, sve ide unutar inputa)
 col1, col2 = st.columns(2)
 
 with col1:
@@ -41,22 +44,19 @@ with col1:
     drug_name = st.selectbox("Odaberite lijek:", list(DRUG_DATABASE.keys()))
 
 with col2:
-    st.markdown("**Starost djeteta (godine i mjeseci):**")
     age_col1, age_col2 = st.columns(2)
     with age_col1:
-        years = st.number_input("Godine", min_value=0, max_value=18, value=2, label_visibility="collapsed")
+        years = st.number_input("Starost djeteta (godine):", min_value=0, max_value=18, value=2)
     with age_col2:
-        extra_months = st.number_input("Mjeseci", min_value=0, max_value=11, value=0, label_visibility="collapsed")
+        extra_months = st.number_input("Starost djeteta (mjeseci):", min_value=0, max_value=11, value=0)
     
     total_months = (years * 12) + extra_months
     
-    st.markdown("**Vrijeme prve doze (sati : minuti):**")
-    trenutno = datetime.now()
     time_col1, time_col2 = st.columns(2)
     with time_col1:
-        vrijeme_sati = st.number_input("Sati", min_value=0, max_value=23, value=trenutno.hour, label_visibility="collapsed")
+        vrijeme_sati = st.number_input("Vrijeme prve doze (sati):", min_value=0, max_value=23, value=trenutno.hour)
     with time_col2:
-        vrijeme_minuti = st.number_input("Minuti", min_value=0, max_value=59, value=trenutno.minute, label_visibility="collapsed")
+        vrijeme_minuti = st.number_input("Vrijeme prve doze (minuti):", min_value=0, max_value=59, value=trenutno.minute)
     
     start_time = time(vrijeme_sati, vrijeme_minuti)
 
