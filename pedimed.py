@@ -1,8 +1,9 @@
 import streamlit as st
 from datetime import datetime, timedelta, time
 
-# --- BAZA PODATAKA SA LIMITIMA ---
-# KOREKCIJA: Paracetamol profil postavljen na 40 mg/kg/dan prema tvom kliničkom pravilu
+# --- BAZA PODATAKA ---
+# "dnevna_mg_kg" je sada fiksirana na terapijskih 40 mg/kg/dan za paracetamol
+# "max_dan_fiksno" ostaje apsolutni zakonski maksimum
 DRUG_DATABASE = {
     "Paracetamol sirup (120mg/5ml)": {
         "dnevna_mg_kg": 40, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
@@ -30,9 +31,7 @@ DRUG_DATABASE = {
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="centered")
 
-# --- POZDRAVNA PORUKA ---
 st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
-
 st.title("⚖️ PediMed: Pedijatrijski Kalkulator Lijekova")
 
 # 1. UNOS PODATAKA
@@ -73,43 +72,49 @@ if st.button("IZRAČUNAJ"):
         if total_months < 3:
             st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjeseca bez savjeta liječnika.")
 
+    # --- PAMETNA EVALUACIJA ZA PARACETAMOL ČEPIĆE ---
+    if "Paracetamol čepići" in drug_name:
+        ciljana_pojedinacna = (weight * 40) / 4
+        odabrana_jacina = data["mg_u_jedinici"]
+        
+        # Ako odabrani čepić značajnoodstupa od ciljane doze (tolerancija unutar 20mg)
+        if abs(odabrana_jacina - ciljana_pojedinacna) > 20:
+            st.error(f"❌ **Neodgovarajuća jačina čepića!**")
+            
+            # Određivanje najboljeg čepića na osnovu težine
+            if ciljana_pojedinacna <= 100: preporuka = "80mg"
+            elif ciljana_pojedinacna <= 135: preporuka = "120mg"
+            elif ciljana_pojedinacna <= 200: preporuka = "150mg"
+            else: preporuka = "250mg"
+            
+            st.write(f"Za težinu od **{weight} kg**, ciljana pojedinačna doza je oko **{round(ciljana_pojedinacna, 1)} mg**.")
+            st.info(f"💡 **Savjet:** Trenutno odabrani čepić od {odabrana_jacina}mg ne odgovara djetetu. Preporučuje se primjena **Paracetamol čepića od {preporuka}**.")
+            st.stop()
+
     st.divider()
     
-    max_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
+    # Terapijski proračun (40 mg/kg/dan)
+    terapijska_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     
-    # Specifična logika za Paracetamol čepiće (120mg) prema ranijim specifikacijama
-    if drug_name == "Paracetamol čepići (120mg)":
-        if 8 <= weight < 10:
-            pojedinacna_mg = 120
-            doza_ispis = "1 čepić (120 mg)"
-        elif 10 <= weight <= 20:
-            if (240 * broj_doza) <= max_mg_24h:
-                pojedinacna_mg = 240
-                doza_ispis = "1 do 2 čepića (120-240 mg)"
-            else:
-                pojedinacna_mg = 120
-                doza_ispis = "1 čepić (120 mg)"
-        else:
-            pojedinacna_mg = (weight * 10)  # Donja granica od 10mg/kg po dozi
-            doza_ispis = f"{round(pojedinacna_mg, 1)} mg"
+    # Apsolutni sigurnosni maksimum za Paracetamol (60 mg/kg/dan)
+    if "Paracetamol" in drug_name:
+        apsolutni_max_24h = min(weight * 60, 4000)
     else:
-        # Standardna logika
-        if "Paracetamol" in drug_name and 2 <= total_months <= 3:
-            broj_doza = 2
-            max_mg_24h = (weight * 15) * 2 
-        pojedinacna_mg = max_mg_24h / broj_doza
-        
-        if data["tip"] == "sirup":
-            final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
-            doza_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
-        else:
-            doza_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
+        apsolutni_max_24h = terapijska_mg_24h  # Za ibuprofen su limit i terapijska doza isti (30 mg/kg)
+
+    pojedinacna_mg = terapijska_mg_24h / broj_doza
+    
+    if data["tip"] == "sirup":
+        final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
+        doza_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
+    else:
+        doza_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
 
     # Prikaz rezultata
     c1, c2 = st.columns(2)
-    c1.metric("Pojedinačna doza", doza_ispis)
-    c2.metric("Maksimalno u 24h", f"{round(max_mg_24h, 1)} mg")
+    c1.metric("Pojedinačna doza (Terapijska)", doza_ispis)
+    c2.metric("Ukupno kroz 24h (Terapijska)", f"{round(terapijska_mg_24h, 1)} mg")
 
     st.subheader("⏰ Plan davanja (24h):")
     current_time = datetime.combine(datetime.today(), start_time)
@@ -118,8 +123,9 @@ if st.button("IZRAČUNAJ"):
         current_time += timedelta(hours=data["interval"])
 
     st.divider()
-    st.error(f"⚠️ **SIGURNOSNI LIMIT (24 sata):**")
-    st.write(f"Za težinu od **{weight}kg**, apsolutni dnevni maksimum je **{round(max_mg_24h, 1)} mg**.")
+    st.error(f"⚠️ **APSOLUTNI SIGURNOSNI LIMIT (Maksimalna doza):**")
+    st.write(f"Za težinu od **{weight} kg**, apsolutni dnevni maksimum paracetamola iznosi **{round(apsolutni_max_24h, 1)} mg** (60 mg/kg/dan).")
+    st.write("Nikada ne prelazite ovaj limit u slučaju da kombinujete sirup i čepiće!")
 
     with st.expander("ℹ️ Važne napomene za odabrani lijek"):
         if data["napomena"]: st.info(data["napomena"])
@@ -133,7 +139,6 @@ if st.button("IZRAČUNAJ"):
 
 # --- DUGI DISCLAIMER I KONTAKT SEKCIJA ---
 st.divider()
-
 with st.container():
     st.warning("⚠️ **VAŽNA NAPOMENA (DISCLAIMER):**")
     st.write("""
