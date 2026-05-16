@@ -51,7 +51,6 @@ with col2:
     
     total_months = (years * 12) + extra_months
     
-    # --- NOVI UNOS VREMENA PREKO DIRETKNIH POLJA (RJEŠENJE ZA SLOBODNO KUCANJE) ---
     st.markdown("**Vrijeme prve doze (sati : minuti):**")
     trenutno = datetime.now()
     time_col1, time_col2 = st.columns(2)
@@ -60,7 +59,6 @@ with col2:
     with time_col2:
         vrijeme_minuti = st.number_input("Minuti", min_value=0, max_value=59, value=trenutno.minute, label_visibility="collapsed")
     
-    # Spajanje unesenih brojeva u time objekat za dalju logiku satnice
     start_time = time(vrijeme_sati, vrijeme_minuti)
 
 data = DRUG_DATABASE[drug_name]
@@ -140,7 +138,7 @@ with st.container():
     st.write("""
     Ova aplikacija je isključivo informativnog karaktera i služi kao pomoć pri izračunu doza prema uputama proizvođača. 
     **PediMed ne predstavlja zamjenu za ljekarski savjet, dijagnozu ili liječenje.** Uvijek se konsultujte sa ljekarom ili farmaceutom prije davanja bilo kojeg lijeka djetetu. 
-    Korištenjem ove aplikacije prihvatate da autor ne snesi odgovornost za eventualne greške u primjeni lijeka.
+    Korištenjem ove aplikacije prihvatate da autor ne snosi odgovornost za eventualne greške u primjeni lijeka.
     """)
 
 st.markdown(f"""
@@ -149,4 +147,10 @@ st.markdown(f"""
 [**www.drkarabeg.ba**](https://drkarabeg.ba)
 """, unsafe_allow_html=True)
 
-st.caption(f"© {datetime.now().year} Created by Karabeg dr Kemal | PediMed Safe v1.5 |")
+# KOREKCIJA: HTML formatiranje unutar st.markdown omogućava da tekst u st.caption (kroz HTML stil) sadrži funkcionalan link
+st.markdown(
+    f"<div style='font-size: 0.8em; color: gray; text-align: center; margin-top: 20px;'>"
+    f"© {datetime.now().year} Created by <a href='https://drkarabeg.ba' target='_blank' style='color: gray; text-decoration: underline;'>Karabeg dr Kemal</a> | PediMed Safe v1.5 |"
+    f"</div>", 
+    unsafe_allow_html=True
+)
