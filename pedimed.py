@@ -95,44 +95,48 @@ if st.button("IZRAČUNAJ"):
             st.info(f"💡 **Klinički savjet:** Za težinu vašeg djeteta od {weight} kg, adekvatan i siguran izbor su **Paracetamol čepići od {preporuka_tekst}**.")
             st.stop()
 
-    # --- NOVA LOGIKA: DIREKTNA VERIFIKACIJA ZA IBUPROFEN ČEPIĆE ---
+    # --- DINAMIČKA LOGIKA ZA IBUPROFEN ČEPIĆE (3x ILI 4x DNEVNO) ---
     elif "Ibuprofen čepići" in drug_name:
-        # Terapijski opseg za ibuprofen na dan je 20 do 30 mg/kg
         min_dnevna_ibu = weight * 20
         max_dnevna_ibu = weight * 30
         odabrana_jacina = data["mg_u_jedinici"]
-        broj_davanja = 24 // data["interval"]  # Za ibuprofen sa intervalom 8, ovo je 3 davanja dnevno
         
-        # Izračunavamo ukupnu dnevnu dozu koju bi dijete unijelo sa odabranim čepićem (3 čepića dnevno)
-        ukupni_dnevni_unos = odabrana_jacina * broj_davanja
+        # Prvo evaluiramo koji režim (3x ili 4x) odgovara ZA TRENUTNO ODABRANI ČEPIĆ
+        validan_rezim_za_odabrani = None
         
-        # Provjera koji čepići uopšte klinički odgovaraju za ovu težinu u rasponu 20-30 mg/kg/dan
-        adekvatni_ibu_cepici = []
-        if min_dnevna_ibu <= (60 * 3) <= max_dnevna_ibu:
-            adekvatni_ibu_cepici.append("60mg")
-        if min_dnevna_ibu <= (125 * 3) <= max_dnevna_ibu:
-            adekvatni_ibu_cepici.append("125mg")
+        if min_dnevna_ibu <= (odabrana_jacina * 3) <= max_dnevna_ibu:
+            validan_rezim_za_odabrani = {"broj_davanja": 3, "interval": 8, "opis": "3 puta dnevno (na 8 sati)"}
+        elif min_dnevna_ibu <= (odabrana_jacina * 4) <= max_dnevna_ibu:
+            validan_rezim_za_odabrani = {"broj_davanja": 4, "interval": 6, "opis": "4 puta dnevno (na 6 sati)"}
             
-        preporuka_ibu_tekst = " ili ".join(adekvatni_ibu_cepici) if adekvatni_ibu_cepici else None
+        # Provjera alternativnih opcija na tržištu (za tekstualni savjet roditelju)
+        adekvatne_alternative = []
+        # Provjera za 60mg
+        if min_dnevna_ibu <= (60 * 3) <= max_dnevna_ibu: adekvatne_alternative.append("60mg (3x dnevno)")
+        elif min_dnevna_ibu <= (60 * 4) <= max_dnevna_ibu: adekvatne_alternative.append("60mg (4x dnevno)")
+        # Provjera za 125mg
+        if min_dnevna_ibu <= (125 * 3) <= max_dnevna_ibu: adekvatne_alternative.append("125mg (3x dnevno)")
+        elif min_dnevna_ibu <= (125 * 4) <= max_dnevna_ibu: adekvatne_alternative.append("125mg (4x dnevno)")
 
-        # Ako trenutno odabrani čepić ne upada u siguran opseg od 20-30 mg/kg/dan
-        if not (min_dnevna_ibu <= ukupni_dnevni_unos <= max_dnevna_ibu):
+        # Ako odabrani čepić u kombinaciji sa 3x ili 4x ne daje ispravan raspon:
+        if not validan_rezim_za_odabrani:
             st.error(f"❌ **Neodgovarajuće doziranje čepića!**")
+            st.write(f"Trenutno odabrani čepić od **{odabrana_jacina}mg** (bilo da se daje 3x ili 4x dnevno) ne može ispuniti siguran opseg za težinu od {weight} kg.")
             
-            if ukupni_dnevni_unos < min_dnevna_ibu:
-                st.write(f"Odabrani čepić od **{odabrana_jacina}mg** daje premalu i neefikasnu dozu za težinu od {weight} kg.")
-            elif ukupni_dnevni_unos > max_dnevna_ibu:
-                st.write(f"Odabrani čepić od **{odabrana_jacina}mg** prekoračuje maksimalnu dozvoljenu dozu od **{max_dnevna_ibu:.1f} mg/dan** za težinu od {weight} kg.")
-            
-            if preporuka_ibu_tekst:
-                st.info(f"💡 **Klinički savjet:** Za težinu vašeg djeteta, u terapeutski opseg se uklapaju **Ibuprofen čepići od {preporuka_ibu_tekst}**.")
+            if adekvatne_alternative:
+                preporuka_ibu_tekst = " ili ".join(adekvatne_alternative)
+                st.info(f"💡 **Klinički savjet:** Za težinu vašeg djeteta, u terapeutski opseg se uklapa: **Ibuprofen čepići od {preporuka_ibu_tekst}**.")
             else:
                 st.warning(
-                    f"💡 **Klinički savjet:** S obzirom na težinu djeteta od **{weight} kg**, nijedan od dostupnih čepića na tržištu (60mg i 125mg) "
-                    f"ne može pokriti potrebe unutar sigurnog opsega (Maksimum: {max_dnevna_ibu:.1f} mg/dan).\n\n"
+                    f"💡 **Klinički savjet:** S obzirom na težinu djeteta od **{weight} kg**, fiksne doze čepića (60mg i 125mg) "
+                    f"u režimima od 3 ili 4 davanja ne odgovaraju sigurnom opsegu (Maksimum: {max_dnevna_ibu:.1f} mg/dan).\n\n"
                     "👉 **Preporučuje se prelazak na Neofen / Ibuprofen sirup** kako bi se doza mogla precizno izmjeriti u mililitrima!"
                 )
             st.stop()
+        else:
+            # Ako je pronađen validan režim, dinamički prepisujemo interval i broj davanja u data objekt
+            data["interval"] = validan_rezim_za_odabrani["interval"]
+            rezim_opis = validan_rezim_za_odabrani["opis"]
 
     st.divider()
     
@@ -183,7 +187,10 @@ if st.button("IZRAČUNAJ"):
         plan_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
         
         naslov_desna = "🟩 UKUPNO KROZ 24 SATA:"
-        sadrzaj_desna = f"**Unos odabranog čepića ({broj_doza}x dnevno):** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
+        if "Ibuprofen" in drug_name:
+            sadrzaj_desna = f"**Režim doziranja:** {rezim_opis}\n\n**Ukupno u 24h:** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
+        else:
+            sadrzaj_desna = f"**Unos odabranog čepića ({broj_doza}x dnevno):** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
 
     # --- 3. PRIKAZ UGRAĐENIH STREAMLIT OKVIRA ---
     c1, c2 = st.columns(2)
