@@ -2,23 +2,24 @@ import streamlit as st
 from datetime import datetime, timedelta, time
 
 # --- BAZA PODATAKA SA LIMITIMA ---
+# KOREKCIJA: Paracetamol profil postavljen na 40 mg/kg/dan prema tvom kliničkom pravilu
 DRUG_DATABASE = {
     "Paracetamol sirup (120mg/5ml)": {
-        "dnevna_mg_kg": 60, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
+        "dnevna_mg_kg": 40, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
         "tip": "sirup", "napomena": "Razmak min 4h. Max 4 doze u 24h."
     },
     "Neofen / Ibuprofen sirup (100mg/5ml)": {
         "dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_5ml": 100, "interval": 6, 
         "tip": "sirup", "napomena": "Razmak min 4h. Dojenčad 3-12 mj: max 3 doze."
     },
-    "Paracetamol čepići (80mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 800, "mg_u_jedinici": 80, "interval": 6, "tip": "supozitorija", "napomena": ""},
+    "Paracetamol čepići (80mg)": {"dnevna_mg_kg": 40, "max_dan_fiksno": 800, "mg_u_jedinici": 80, "interval": 6, "tip": "supozitorija", "napomena": ""},
     "Paracetamol čepići (120mg)": {
-        "dnevna_mg_kg": 60, "max_dan_fiksno": 1000, "mg_u_jedinici": 120, "interval": 6, 
+        "dnevna_mg_kg": 40, "max_dan_fiksno": 1000, "mg_u_jedinici": 120, "interval": 6, 
         "tip": "supozitorija", 
         "napomena": "Isključivo cijeli čepići (ne lomiti). Nije prikladno u slučaju proljeva."
     },
-    "Paracetamol čepići (150mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 1200, "mg_u_jedinici": 150, "interval": 6, "tip": "supozitorija", "napomena": ""},
-    "Paracetamol čepići (250mg)": {"dnevna_mg_kg": 60, "max_dan_fiksno": 2000, "mg_u_jedinici": 250, "interval": 6, "tip": "supozitorija", "napomena": ""},
+    "Paracetamol čepići (150mg)": {"dnevna_mg_kg": 40, "max_dan_fiksno": 1200, "mg_u_jedinici": 150, "interval": 6, "tip": "supozitorija", "napomena": ""},
+    "Paracetamol čepići (250mg)": {"dnevna_mg_kg": 40, "max_dan_fiksno": 2000, "mg_u_jedinici": 250, "interval": 6, "tip": "supozitorija", "napomena": ""},
     "Ibuprofen čepići (60mg)": {
         "dnevna_mg_kg": 30, "max_dan_fiksno": 600, "mg_u_jedinici": 60, "interval": 8, 
         "tip": "supozitorija", 
@@ -77,7 +78,7 @@ if st.button("IZRAČUNAJ"):
     max_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     
-    # Specifična logika za LUPOCET BABY / Paracetamol 120mg
+    # Specifična logika za Paracetamol čepiće (120mg) prema ranijim specifikacijama
     if drug_name == "Paracetamol čepići (120mg)":
         if 8 <= weight < 10:
             pojedinacna_mg = 120
@@ -90,7 +91,7 @@ if st.button("IZRAČUNAJ"):
                 pojedinacna_mg = 120
                 doza_ispis = "1 čepić (120 mg)"
         else:
-            pojedinacna_mg = (weight * 15)
+            pojedinacna_mg = (weight * 10)  # Donja granica od 10mg/kg po dozi
             doza_ispis = f"{round(pojedinacna_mg, 1)} mg"
     else:
         # Standardna logika
@@ -147,7 +148,6 @@ st.markdown(f"""
 [**www.drkarabeg.ba**](https://drkarabeg.ba)
 """, unsafe_allow_html=True)
 
-# KOREKCIJA: HTML formatiranje unutar st.markdown omogućava da tekst u st.caption (kroz HTML stil) sadrži funkcionalan link
 st.markdown(
     f"<div style='font-size: 0.8em; color: gray; text-align: center; margin-top: 20px;'>"
     f"© {datetime.now().year} Created by <a href='https://drkarabeg.ba' target='_blank' style='color: gray; text-decoration: underline;'>Karabeg dr Kemal</a> | PediMed Safe v1.5 |"
