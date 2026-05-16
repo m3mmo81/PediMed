@@ -94,93 +94,56 @@ if st.button("IZRAČUNAJ"):
     broj_doza = 24 // data["interval"]
     pojedinacna_mg = terapijska_mg_24h / broj_doza
     
-    # --- LOGIKA MAKSIMALNIH GRANICA I RASPONA (DVOSTRUKA FORMULA) ---
+    # --- LOGIKA PRORAČUNA MAKSIMALNIH GRANICA I RASPONA ---
     if "Paracetamol sirup" in drug_name:
         terapijska_ml_24h = round((terapijska_mg_24h * 5) / 120, 1)
         apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
         apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 120, 1)
         max_pojedinacna_mg = apsolutni_max_24h / broj_doza
         max_pojedinacna_ml = round((max_pojedinacna_mg * 5) / 120, 1)
+        
+        naslov_lijeva = "🔷 RASPON POJEDINAČNE DOZE (40-60 mg/kg):"
+        sadrzaj_lijeva = f"**{final_ml := round((pojedinacna_mg * 5) / 120, 1)} ml** do **{max_pojedinacna_ml} ml**\n\n({round(pojedinacna_mg, 1)} - {round(max_pojedinacna_mg, 1)} mg)"
+        plan_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg) [Preporučeno]"
+        
+        naslov_desna = "🟩 UKUPNO KROZ 24 SATA:"
+        sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg ({terapijska_ml_24h} ml)\n\n🔴 **Maksimalno (60 mg/kg):** {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)"
+        
     elif "Ibuprofen sirup" in drug_name:
         terapijska_ml_24h = round((terapijska_mg_24h * 5) / 100, 1)
         apsolutni_max_24h = min(weight * 30, data["max_dan_fiksno"])
         apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 100, 1)
         max_pojedinacna_mg = apsolutni_max_24h / broj_doza
         max_pojedinacna_ml = round((max_pojedinacna_mg * 5) / 100, 1)
+        
+        naslov_lijeva = "🔷 RASPON POJEDINAČNE DOZE (20-30 mg/kg):"
+        sadrzaj_lijeva = f"**{final_ml := round((pojedinacna_mg * 5) / 100, 1)} ml** do **{max_pojedinacna_ml} ml**\n\n({round(pojedinacna_mg, 1)} - {round(max_pojedinacna_mg, 1)} mg)"
+        plan_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg) [Preporučeno]"
+        
+        naslov_desna = "🟩 UKUPNO KROZ 24 SATA:"
+        sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg ({terapijska_ml_24h} ml)\n\n🔴 **Maksimalno (30 mg/kg):** {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)"
+        
     else:
-        # Čepići
+        # Čepići paracetamola i ibuprofena
         apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"]) if "Paracetamol" in drug_name else min(weight * 30, data["max_dan_fiksno"])
-        terapijska_ml_24h = 0
-        apsolutni_max_ml_24h = 0
-
-    # Formatiranje ispisa doza i naslova kartica
-    if data["tip"] == "sirup":
-        final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
-        
-        if "Paracetamol sirup" in drug_name:
-            doza_ispis = f"{final_ml} ml do {max_pojedinacna_ml} ml <span style='font-size:0.7em; color:#aaa;'>({round(pojedinacna_mg, 1)}-{round(max_pojedinacna_mg, 1)} mg)</span>"
-            plan_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg) [Preporučeno]"
-            naslov_kartice = "Raspon pojedinačne doze (40-60 mg/kg)"
-            desni_naslov = "Ukupno kroz 24h (Terapijski preporučeno)"
-            
-            # Formiranje čistog teksta bez vitičastih zagrada unutar HTML-a
-            tekst_mg_ml = str(round(terapijska_mg_24h, 1)) + " mg <span style='font-size:0.7em; color:#00ff66;'>(" + str(terapijska_ml_24h) + " ml)</span>"
-            tekst_maksimalno = "⚠️ Maksimalno (60 mg/kg): " + str(round(apsolutni_max_24h, 1)) + " mg (" + str(apsolutni_max_ml_24h) + " ml)"
-            
-            desna_kartica_sadrzaj = f"""
-            <div style="font-size: 1.4em; font-weight: bold; color: white;">{tekst_mg_ml}</div>
-            <div style="font-size: 0.8em; color: #ff4b4b; font-weight: bold; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
-                {tekst_maksimalno}
-            </div>
-            """
-        elif "Ibuprofen sirup" in drug_name:
-            doza_ispis = f"{final_ml} ml do {max_pojedinacna_ml} ml <span style='font-size:0.7em; color:#aaa;'>({round(pojedinacna_mg, 1)}-{round(max_pojedinacna_mg, 1)} mg)</span>"
-            plan_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg) [Preporučeno]"
-            naslov_kartice = "Raspon pojedinačne doze (20-30 mg/kg)"
-            desni_naslov = "Ukupno kroz 24h (Terapijski preporučeno)"
-            
-            tekst_mg_ml = str(round(terapijska_mg_24h, 1)) + " mg <span style='font-size:0.7em; color:#00ff66;'>(" + str(terapijska_ml_24h) + " ml)</span>"
-            tekst_maksimalno = "⚠️ Maksimalno (30 mg/kg): " + str(round(apsolutni_max_24h, 1)) + " mg (" + str(apsolutni_max_ml_24h) + " ml)"
-            
-            desna_kartica_sadrzaj = f"""
-            <div style="font-size: 1.4em; font-weight: bold; color: white;">{tekst_mg_ml}</div>
-            <div style="font-size: 0.8em; color: #ff4b4b; font-weight: bold; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
-                {tekst_maksimalno}
-            </div>
-            """
-    else:
-        doza_ispis = f"1 čepić <span style='font-size:0.7em; color:#aaa;'>({data['mg_u_jedinici']} mg)</span>"
+        naslov_lijeva = "🔷 POJEDINAČNA DOZA (Terapijska):"
+        sadrzaj_lijeva = f"**1 čepić**\n\n({data['mg_u_jedinici']} mg)"
         plan_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
-        naslov_kartice = "Pojedinačna doza (Terapijska)"
-        desni_naslov = "Ukupno kroz 24h (Terapijska)"
         
-        tekst_mg = str(round(terapijska_mg_24h, 1)) + " mg"
-        tekst_maksimalno = "⚠️ Maksimalno: " + str(round(apsolutni_max_24h, 1)) + " mg"
-        
-        desna_kartica_sadrzaj = f"""
-        <div style="font-size: 1.4em; font-weight: bold; color: white;">{tekst_mg}</div>
-        <div style="font-size: 0.8em; color: #ff4b4b; font-weight: bold; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
-            {tekst_maksimalno}
-        </div>
-        """
+        naslov_desna = "🟩 UKUPNO KROZ 24 SATA:"
+        sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg\n\n🔴 **Maksimalno:** {round(apsolutni_max_24h, 1)} mg"
 
-    # --- KARTICE ---
+    # --- PRIKAZ ČISTIH NATIIVNIH STREAMLIT KARTICA (BEZ JEDNOG JEDINOG HTML TAGA) ---
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"""
-        <div style="background-color: #1e212a; padding: 15px; border-radius: 10px; border-left: 5px solid #00fff0; min-height: 115px;">
-            <div style="font-size: 0.82em; color: #aaa; font-weight: bold; margin-bottom: 5px;">{naslov_kartice}</div>
-            <div style="font-size: 1.35em; font-weight: bold; color: white; line-height: 1.3;">{doza_ispis}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.caption(naslov_lijeva)
+            st.markdown(sadrzaj_lijeva)
         
     with c2:
-        st.markdown(f"""
-        <div style="background-color: #1e212a; padding: 15px; border-radius: 10px; border-left: 5px solid #00ff66; min-height: 115px;">
-            <div style="font-size: 0.82em; color: #aaa; font-weight: bold; margin-bottom: 5px;">{desni_naslov}</div>
-            {desna_kartica_sadrzaj}
-        </div>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.caption(naslov_desna)
+            st.markdown(sadrzaj_desna)
 
     st.write("") 
 
