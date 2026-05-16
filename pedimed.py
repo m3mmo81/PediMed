@@ -123,10 +123,14 @@ if st.button("IZRAČUNAJ"):
             naslov_kartice = "Raspon pojedinačne doze (40-60 mg/kg)"
             desni_naslov = "Ukupno kroz 24h (Terapijski preporučeno)"
             
+            # Formiranje čistog teksta bez vitičastih zagrada unutar HTML-a
+            tekst_mg_ml = str(round(terapijska_mg_24h, 1)) + " mg <span style='font-size:0.7em; color:#00ff66;'>(" + str(terapijska_ml_24h) + " ml)</span>"
+            tekst_maksimalno = "⚠️ Maksimalno (60 mg/kg): " + str(round(apsolutni_max_24h, 1)) + " mg (" + str(apsolutni_max_ml_24h) + " ml)"
+            
             desna_kartica_sadrzaj = f"""
-            <div style="font-size: 1.4em; font-weight: bold; color: white;">{round(terapijska_mg_24h, 1)} mg <span style="font-size:0.7em; color:#00ff66;">({terapijska_ml_24h} ml)</span></div>
+            <div style="font-size: 1.4em; font-weight: bold; color: white;">{tekst_mg_ml}</div>
             <div style="font-size: 0.8em; color: #ff4b4b; font-weight: bold; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
-                ⚠️ Maksimalno (60 mg/kg): {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)
+                {tekst_maksimalno}
             </div>
             """
         elif "Ibuprofen sirup" in drug_name:
@@ -135,10 +139,13 @@ if st.button("IZRAČUNAJ"):
             naslov_kartice = "Raspon pojedinačne doze (20-30 mg/kg)"
             desni_naslov = "Ukupno kroz 24h (Terapijski preporučeno)"
             
+            tekst_mg_ml = str(round(terapijska_mg_24h, 1)) + " mg <span style='font-size:0.7em; color:#00ff66;'>(" + str(terapijska_ml_24h) + " ml)</span>"
+            tekst_maksimalno = "⚠️ Maksimalno (30 mg/kg): " + str(round(apsolutni_max_24h, 1)) + " mg (" + str(apsolutni_max_ml_24h) + " ml)"
+            
             desna_kartica_sadrzaj = f"""
-            <div style="font-size: 1.4em; font-weight: bold; color: white;">{round(terapijska_mg_24h, 1)} mg <span style="font-size:0.7em; color:#00ff66;">({terapijska_ml_24h} ml)</span></div>
+            <div style="font-size: 1.4em; font-weight: bold; color: white;">{tekst_mg_ml}</div>
             <div style="font-size: 0.8em; color: #ff4b4b; font-weight: bold; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
-                ⚠️ Maksimalno (30 mg/kg): {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)
+                {tekst_maksimalno}
             </div>
             """
     else:
@@ -147,14 +154,17 @@ if st.button("IZRAČUNAJ"):
         naslov_kartice = "Pojedinačna doza (Terapijska)"
         desni_naslov = "Ukupno kroz 24h (Terapijska)"
         
+        tekst_mg = str(round(terapijska_mg_24h, 1)) + " mg"
+        tekst_maksimalno = "⚠️ Maksimalno: " + str(round(apsolutni_max_24h, 1)) + " mg"
+        
         desna_kartica_sadrzaj = f"""
-        <div style="font-size: 1.4em; font-weight: bold; color: white;">{round(terapijska_mg_24h, 1)} mg</div>
+        <div style="font-size: 1.4em; font-weight: bold; color: white;">{tekst_mg}</div>
         <div style="font-size: 0.8em; color: #ff4b4b; font-weight: bold; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
-            ⚠️ Maksimalno: {round(apsolutni_max_24h, 1)} mg
+            {tekst_maksimalno}
         </div>
         """
 
-    # --- BEZBJEDAN PRIKAZ HTML KARTICA ---
+    # --- KARTICE ---
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(f"""
