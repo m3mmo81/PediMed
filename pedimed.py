@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta, time
 
 # --- BAZA PODATAKA ---
-# "dnevna_mg_kg" je preporučena terapijska doza (40 mg/kg za paracetamol, 20 mg/kg za ibuprofen)
+# "dnevna_mg_kg" predstavlja početnu preporučenu terapijsku dozu (40 mg/kg za paracetamol, 20 mg/kg za ibuprofen)
 DRUG_DATABASE = {
     "Paracetamol sirup (120mg/5ml)": {
         "dnevna_mg_kg": 40, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
@@ -71,34 +71,43 @@ if st.button("IZRAČUNAJ"):
         if total_months < 3:
             st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjeseca bez savjeta liječnika.")
 
+    # --- DIREKTNA KLINIČKA VERIFIKACIJA I FILTRIRANJE ČEPIĆA (POENTA) ---
+    if "Paracetamol čepići" in drug_name:
+        # Računamo klinički opseg pojedinačne doze kroz 4 davanja (od 30 do 40 mg/kg/dan)
+        min_pojedinacna_efikasna = (weight * 30) / 4
+        max_pojedinacna_sigurna = (weight * 60) / 4 # Gornja sigurnosna granica po dozi
+        odabrana_jacina = data["mg_u_jedinici"]
+        
+        # Izračunavanje koji su čepići na tržištu zapravo adekvatni za ovu težinu
+        adekvatni_cepici = []
+        if (weight * 60 / 4) >= 80 >= (weight * 30 / 4 - 15): adekvatni_cepici.append("80mg")
+        if (weight * 60 / 4) >= 120 >= (weight * 30 / 4 - 20): adekvatni_cepici.append("120mg")
+        if (weight * 60 / 4) >= 150 >= (weight * 30 / 4 - 25): adekvatni_cepici.append("150mg")
+        if (weight * 60 / 4) >= 250 >= (weight * 30 / 4 - 40): adekvatni_cepici.append("250mg")
+        
+        preporuka_tekst = " ili ".join(adekvatni_cepici) if adekvatni_cepici else "konsultaciju sa ljekarom"
+
+        # 1. Provjera subdoziranja (ako je čepić preslab za djetetov metabolizam i težinu)
+        if odabrana_jacina < min_pojedinacna_efikasna and abs(odabrana_jacina - min_pojedinacna_efikasna) > 15:
+            st.error(f"❌ **Subdoziranje! Odabrani čepić ({odabrana_jacina}mg) je preslab za težinu od {weight} kg.**")
+            st.info(f"💡 **Klinički savjet:** Davanje ovog čepića neće efikasno spustiti temperaturu. Za težinu vašeg djeteta, adekvatan izbor su **Paracetamol čepići od {preporuka_tekst}**.")
+            st.stop()
+            
+        # 2. Provjera hiperdoziranja (ako čepić samostalno probija maksimalnu sigurnu zonu od 60 mg/kg/dan)
+        if odabrana_jacina > max_pojedinacna_sigurna:
+            st.error(f"❌ **Previsoka doza! Odabrani čepić ({odabrana_jacina}mg) je prejak za težinu od {weight} kg.**")
+            st.info(f"💡 **Klinički savjet:** Za težinu vašeg djeteta od {weight} kg, adekvatan i siguran izbor su **Paracetamol čepići od {preporuka_tekst}**.")
+            st.stop()
+
     st.divider()
     
-    # 2. GLAVNI PRORAČUN DOZA (ČISTI PYTHON)
+    # Terapijski proračun (preporučene doze)
     terapijska_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     pojedinacna_mg = terapijska_mg_24h / broj_doza
     
-    # Određivanje klinički najodgovarajućeg čepića paracetamola za preporuku roditeljima
-    idealna_pojedinacna_paracetamol = (weight * 40) / 4
-    if idealna_pojedinacna_paracetamol <= 100: preporuceni_cepic = "80mg"
-    elif idealna_pojedinacna_paracetamol <= 135: preporuceni_cepic = "120mg"
-    elif idealna_pojedinacna_paracetamol <= 190: preporuceni_cepic = "150mg"
-    else: preporuceni_cepic = "250mg"
-
-    # Određivanje klinički najodgovarajućeg čepića ibuprofena za preporuku roditeljima
-    idealna_pojedinacna_ibuprofen = (weight * 20) / 3  # Na bazi 3 doze dnevno
-    if idealna_pojedinacna_ibuprofen <= 90: preporuceni_cepic_ibu = "60mg"
-    else: preporuceni_cepic_ibu = "125mg"
-
-    # Inicijalizacija tekstova za Streamlit nativne kontejnere
-    naslov_lijeva = ""
-    sadrzaj_lijeva = ""
-    naslov_desna = ""
-    sadrzaj_desna = ""
-    plan_ispis = ""
-    upozorenje_za_cepic = ""
-
-    if drug_name == "Paracetamol sirup (120mg/5ml)":
+    # --- LOGIKA PRORAČUNA MAKSIMALNIH GRANICA I RASPONA ---
+    if "Paracetamol sirup" in drug_name:
         terapijska_ml_24h = round((terapijska_mg_24h * 5) / 120, 1)
         apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
         apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 120, 1)
@@ -114,7 +123,7 @@ if st.button("IZRAČUNAJ"):
         naslov_desna = "🟩 UKUPNO KROZ 24 SATA:"
         sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg ({terapijska_ml_24h} ml)\n\n**Maksimalno (60 mg/kg):** {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)"
         
-    elif drug_name == "Neofen / Ibuprofen sirup (100mg/5ml)":
+    elif "Ibuprofen sirup" in drug_name:
         terapijska_ml_24h = round((terapijska_mg_24h * 5) / 100, 1)
         apsolutni_max_24h = min(weight * 30, data["max_dan_fiksno"])
         apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 100, 1)
@@ -131,15 +140,10 @@ if st.button("IZRAČUNAJ"):
         sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg ({terapijska_ml_24h} ml)\n\n**Maksimalno (30 mg/kg):** {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)"
         
     else:
-        # Svi oblici čepića (Paracetamol i Ibuprofen) - logiku ne blokiramo već nudimo fleksibilnu preporuku
-        if "Paracetamol" in drug_name:
-            apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
-            upozorenje_za_cepic = f"💡 **Klinički savjet za čepiće paracetamola:** Za težinu od **{weight} kg**, najodgovarajući oblik su **čepići od {preporuceni_cepic}**."
-        else:
-            apsolutni_max_24h = min(weight * 30, data["max_dan_fiksno"])
-            upozorenje_za_cepic = f"💡 **Klinički savjet za čepiće ibuprofena:** Za težinu od **{weight} kg**, najodgovarajući oblik su **čepići od {preporuceni_cepic_ibu}**."
-
-        naslov_lijeva = "🔷 ODABRANA POJEDINAČNA DOZA ČEPIĆA:"
+        # Čepići
+        apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"]) if "Paracetamol" in drug_name else min(weight * 30, data["max_dan_fiksno"])
+        
+        naslov_lijeva = "🔷 POJEDINAČNA DOZA ČEPIĆA:"
         sadrzaj_lijeva = f"**1 čepić**\n\n({data['mg_u_jedinici']} mg)"
         plan_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
         
@@ -157,10 +161,6 @@ if st.button("IZRAČUNAJ"):
         with st.container(border=True):
             st.caption(naslov_desna)
             st.markdown(sadrzaj_desna)
-
-    # Ako je u pitanju supozitorija, ispiši dinamičku preporuku odmah ispod glavnih rezultata
-    if upozorenje_za_cepic:
-        st.info(upozorenje_za_cepic)
 
     st.write("") 
 
@@ -199,7 +199,7 @@ with st.container():
     st.write("""
     Ova aplikacija je isključivo informativnog karaktera i služi kao pomoć pri izračunu doza prema uputama proizvođača. 
     **PediMed ne predstavlja zamjenu za ljekarski savjet, dijagnozu ili liječenje.** Uvijek se konsultujte sa ljekarom ili farmaceutom prije davanja bilo kojeg lijeka djetetu. 
-    Korištenjem ove aplikacije prihvatate da autor ne snosi odgovornost za eventualne greške u primjeni lijeka.
+    Korištenjem ove aplikacije prihvatate da autor ne snosi odgovornost za eventualne greške u applyciranju lijeka.
     """)
 
 st.markdown("""
