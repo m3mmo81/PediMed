@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta, time
 
 # --- BAZA PODATAKA ---
+# "dnevna_mg_kg" je fiksirana na preporučenu terapijsku dozu (40 mg/kg za paracetamol, 20 mg/kg za ibuprofen)
 DRUG_DATABASE = {
     "Paracetamol sirup (120mg/5ml)": {
         "dnevna_mg_kg": 40, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
@@ -95,32 +96,24 @@ if st.button("IZRAČUNAJ"):
     
     # --- LOGIKA MAKSIMALNIH GRANICA I RASPONA (DVOSTRUKA FORMULA) ---
     if "Paracetamol sirup" in drug_name:
-        # Terapijski ml kroz 24h
         terapijska_ml_24h = round((terapijska_mg_24h * 5) / 120, 1)
-        # Maksimalni proračuni (60 mg/kg)
         apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
         apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 120, 1)
-        
         max_pojedinacna_mg = apsolutni_max_24h / broj_doza
         max_pojedinacna_ml = round((max_pojedinacna_mg * 5) / 120, 1)
-        
     elif "Ibuprofen sirup" in drug_name:
-        # Terapijski ml kroz 24h
         terapijska_ml_24h = round((terapijska_mg_24h * 5) / 100, 1)
-        # Maksimalni proračuni (30 mg/kg)
         apsolutni_max_24h = min(weight * 30, data["max_dan_fiksno"])
         apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 100, 1)
-        
         max_pojedinacna_mg = apsolutni_max_24h / broj_doza
         max_pojedinacna_ml = round((max_pojedinacna_mg * 5) / 100, 1)
-        
     else:
-        # Za čepiće
+        # Čepići
         apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"]) if "Paracetamol" in drug_name else min(weight * 30, data["max_dan_fiksno"])
         terapijska_ml_24h = 0
         apsolutni_max_ml_24h = 0
 
-    # Formatiranje ispisa za pojedinačne doze i priprema tekstova za kartice
+    # Formatiranje ispisa doza i naslova kartica
     if data["tip"] == "sirup":
         final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
         
@@ -130,7 +123,6 @@ if st.button("IZRAČUNAJ"):
             naslov_kartice = "Raspon pojedinačne doze (40-60 mg/kg)"
             desni_naslov = "Ukupno kroz 24h (Terapijski preporučeno)"
             
-            # Detalji unutar desne kartice (Preporučeno + Apsolutni Maksimum)
             desna_kartica_sadrzaj = f"""
             <div style="font-size: 1.4em; font-weight: bold; color: white;">{round(terapijska_mg_24h, 1)} mg <span style="font-size:0.7em; color:#00ff66;">({terapijska_ml_24h} ml)</span></div>
             <div style="font-size: 0.8em; color: #ff4b4b; font-weight: bold; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
@@ -143,7 +135,6 @@ if st.button("IZRAČUNAJ"):
             naslov_kartice = "Raspon pojedinačne doze (20-30 mg/kg)"
             desni_naslov = "Ukupno kroz 24h (Terapijski preporučeno)"
             
-            # Detalji unutar desne kartice (Preporučeno + Apsolutni Maksimum)
             desna_kartica_sadrzaj = f"""
             <div style="font-size: 1.4em; font-weight: bold; color: white;">{round(terapijska_mg_24h, 1)} mg <span style="font-size:0.7em; color:#00ff66;">({terapijska_ml_24h} ml)</span></div>
             <div style="font-size: 0.8em; color: #ff4b4b; font-weight: bold; margin-top: 8px; border-top: 1px solid #333; padding-top: 5px;">
@@ -151,7 +142,6 @@ if st.button("IZRAČUNAJ"):
             </div>
             """
     else:
-        # Čepići
         doza_ispis = f"1 čepić <span style='font-size:0.7em; color:#aaa;'>({data['mg_u_jedinici']} mg)</span>"
         plan_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
         naslov_kartice = "Pojedinačna doza (Terapijska)"
@@ -164,7 +154,7 @@ if st.button("IZRAČUNAJ"):
         </div>
         """
 
-    # --- KOREKTOVANI PRIKAZ REZULTATA SA MG I ML UNUTAR KARTICA ---
+    # --- BEZBJEDAN PRIKAZ HTML KARTICA ---
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(f"""
