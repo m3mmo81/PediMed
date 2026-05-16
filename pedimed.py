@@ -2,8 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta, time
 
 # --- BAZA PODATAKA ---
-# "dnevna_mg_kg" je sada fiksirana na terapijskih 40 mg/kg/dan za paracetamol
-# "max_dan_fiksno" ostaje apsolutni zakonski maksimum
+# "dnevna_mg_kg" je fiksirana na terapijskih 40 mg/kg/dan za paracetamol profile
 DRUG_DATABASE = {
     "Paracetamol sirup (120mg/5ml)": {
         "dnevna_mg_kg": 40, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
@@ -77,11 +76,8 @@ if st.button("IZRAČUNAJ"):
         ciljana_pojedinacna = (weight * 40) / 4
         odabrana_jacina = data["mg_u_jedinici"]
         
-        # Ako odabrani čepić značajnoodstupa od ciljane doze (tolerancija unutar 20mg)
         if abs(odabrana_jacina - ciljana_pojedinacna) > 20:
             st.error(f"❌ **Neodgovarajuća jačina čepića!**")
-            
-            # Određivanje najboljeg čepića na osnovu težine
             if ciljana_pojedinacna <= 100: preporuka = "80mg"
             elif ciljana_pojedinacna <= 135: preporuka = "120mg"
             elif ciljana_pojedinacna <= 200: preporuka = "150mg"
@@ -100,8 +96,9 @@ if st.button("IZRAČUNAJ"):
     # Apsolutni sigurnosni maksimum za Paracetamol (60 mg/kg/dan)
     if "Paracetamol" in drug_name:
         apsolutni_max_24h = min(weight * 60, 4000)
+        apsolutni_max_ml_24h = round((apsolutni_max_24h * 5) / 120, 1) if data["tip"] == "sirup" else 0
     else:
-        apsolutni_max_24h = terapijska_mg_24h  # Za ibuprofen su limit i terapijska doza isti (30 mg/kg)
+        apsolutni_max_24h = terapijska_mg_24h
 
     pojedinacna_mg = terapijska_mg_24h / broj_doza
     
@@ -124,7 +121,10 @@ if st.button("IZRAČUNAJ"):
 
     st.divider()
     st.error(f"⚠️ **APSOLUTNI SIGURNOSNI LIMIT (Maksimalna doza):**")
-    st.write(f"Za težinu od **{weight} kg**, apsolutni dnevni maksimum paracetamola iznosi **{round(apsolutni_max_24h, 1)} mg** (60 mg/kg/dan).")
+    if drug_name == "Paracetamol sirup (120mg/5ml)":
+        st.write(f"Za težinu od **{weight} kg**, apsolutni dnevni maksimum paracetamola iznosi **{apsolutni_max_ml_24h} ml** (ukupno {round(apsolutni_max_24h, 1)} mg na bazi 60 mg/kg/dan).")
+    else:
+        st.write(f"Za težinu od **{weight} kg**, apsolutni dnevni maksimum paracetamola iznosi **{round(apsolutni_max_24h, 1)} mg** (60 mg/kg/dan).")
     st.write("Nikada ne prelazite ovaj limit u slučaju da kombinujete sirup i čepiće!")
 
     with st.expander("ℹ️ Važne napomene za odabrani lijek"):
