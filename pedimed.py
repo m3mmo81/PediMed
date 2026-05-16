@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 # --- BAZA PODATAKA SA LIMITIMA ---
 DRUG_DATABASE = {
@@ -51,7 +51,10 @@ with col2:
     
     total_months = (years * 12) + extra_months
     st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-    start_time = st.time_input("Vrijeme prve doze:", value=datetime.now().time())
+    
+    # KOREKCIJA: Eksplicitno prosljeđivanje trenutnog vremena kao time objekta omogućava punu i laku izmjenu u UI
+    trenutno_vrijeme = datetime.now().time()
+    start_time = st.time_input("Vrijeme prve doze:", value=time(trenutno_vrijeme.hour, trenutno_vrijeme.minute))
 
 data = DRUG_DATABASE[drug_name]
 
@@ -95,7 +98,7 @@ if st.button("IZRAČUNAJ"):
             final_ml = round((pojedinacna_mg * 5) / data["mg_u_5ml"], 1)
             doza_ispis = f"{final_ml} ml ({round(pojedinacna_mg, 1)} mg)"
         else:
-            doza_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
+            doza_ispis = f"1 čic ({data['mg_u_jedinici']} mg)"
 
     # Prikaz rezultata
     c1, c2 = st.columns(2)
