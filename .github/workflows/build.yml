@@ -21,7 +21,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Create Project
+      - name: Create Android Project
         run: |
 
           mkdir -p app/src/main/java/com/pedimed/app
@@ -38,7 +38,11 @@ jobs:
           EOF
 
           cat > gradle/wrapper/gradle-wrapper.properties <<EOF
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
           distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
           EOF
 
           cat > build.gradle <<EOF
@@ -152,10 +156,14 @@ jobs:
           }
           EOF
 
-          gradle wrapper
+          curl -L https://services.gradle.org/distributions/gradle-8.4-bin.zip -o gradle.zip
+          unzip -q gradle.zip
+          chmod +x gradle-8.4/bin/gradle
+
+          gradle-8.4/bin/gradle wrapper
 
       - name: Build APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
