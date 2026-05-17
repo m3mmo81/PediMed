@@ -56,7 +56,7 @@ jobs:
               android:layout_height="match_parent" />
           EOF
 
-          # 3. NADOGRAĐENI JAVA KOD KOJI PREPOZNAJE KLIKOVE NA SVE TVOJE LINKOVE
+          # 3. PAMETNIJI JAVA KOD - OBRNUTA LOGIKA FILTRIRANJA LINKOVA
           cat << 'EOF' > app/src/main/java/com/pedimed/app/MainActivity.java
           package com.pedimed.app;
           import android.app.Activity;
@@ -81,14 +81,14 @@ jobs:
                   myWebView.setWebViewClient(new WebViewClient() {
                       @Override
                       public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                          // Ako klikneš na bilo šta što vodi na tvoj sajt drkarabeg.ba, otvori eksterni browser telefona
-                          if (url != null && url.contains("drkarabeg.ba")) {
-                              Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                              view.getContext().startActivity(intent);
-                              return true;
+                          // Ako je link unutar Streamlit domene, učitaj ga unutar aplikacije
+                          if (url != null && url.contains("streamlit.app")) {
+                              return false;
                           }
-                          // Sve ostalo (Streamlit kalkulator) ostaje unutar aplikacije
-                          return false;
+                          // SVE OSTALE LINKOVE (tvoj sajt drkarabeg.ba, linkove u footeru itd.) otvori van aplikacije u browseru telefona!
+                          Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                          view.getContext().startActivity(intent);
+                          return true;
                       }
                   });
                   myWebView.loadUrl("https://pedimed-cqpzmf9jxtueqkplhpyppn.streamlit.app/");
