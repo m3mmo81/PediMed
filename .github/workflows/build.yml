@@ -1,9 +1,14 @@
+```yaml
 name: Build Android WebView
-on: [push, workflow_dispatch]
+
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -11,11 +16,13 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
+          cache: gradle
 
+      # FIX: v3 koristi Node.js 20 koji je deprecated
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Create Native Android Project
         run: |
@@ -36,14 +43,26 @@ jobs:
           fi
 
           cat << 'EOF' > app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.pedimed.app">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.pedimed.app">
+
               <uses-permission android:name="android.permission.INTERNET" />
-              <application android:label="PediMed Safe" android:icon="@mipmap/ic_launcher" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true">
-                  <activity android:name=".MainActivity" android:exported="true">
+
+              <application
+                  android:label="PediMed Safe"
+                  android:icon="@mipmap/ic_launcher"
+                  android:theme="@android:style/Theme.NoTitleBar"
+                  android:usesCleartextTraffic="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
+
                   </activity>
               </application>
           </manifest>
@@ -58,6 +77,7 @@ jobs:
 
           cat << 'EOF' > app/src/main/java/com/pedimed/app/MainActivity.java
           package com.pedimed.app;
+
           import android.app.Activity;
           import android.os.Bundle;
           import android.webkit.WebSettings;
@@ -65,15 +85,23 @@ jobs:
           import android.webkit.WebViewClient;
 
           public class MainActivity extends Activity {
+
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
-                  WebView myWebView = (WebView) findViewById(R.id.webview);
+
+                  WebView myWebView = findViewById(R.id.webview);
+
                   WebSettings webSettings = myWebView.getSettings();
                   webSettings.setJavaScriptEnabled(true);
                   webSettings.setDomStorageEnabled(true);
-                  webSettings.setUserAgentString("Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36");
+
+                  webSettings.setUserAgentString(
+                      "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 " +
+                      "(KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36"
+                  );
+
                   myWebView.setWebViewClient(new WebViewClient());
                   myWebView.loadUrl("https://pedimed-cqpzmf9jxtueqkplhpyppn.streamlit.app/");
               }
@@ -86,10 +114,12 @@ jobs:
                   google()
                   mavenCentral()
               }
+
               dependencies {
                   classpath 'com.android.tools.build:gradle:8.2.2'
               }
           }
+
           allprojects {
               repositories {
                   google()
@@ -102,9 +132,11 @@ jobs:
           plugins {
               id 'com.android.application'
           }
+
           android {
               namespace 'com.pedimed.app'
               compileSdk 34
+
               defaultConfig {
                   applicationId "com.pedimed.app"
                   minSdk 24
@@ -112,23 +144,54 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
-              // DIO KOJI PREIMENUJE FAJL U PediMed.apk:
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+
               applicationVariants.all { variant ->
                   variant.outputs.all {
                       outputFileName = "PediMed.apk"
                   }
               }
           }
+
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.7.0'
+          }
           EOF
 
-          echo "include ':app'" > settings.gradle
+          cat << 'EOF' > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          include ':app'
+          EOF
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Build APK
-        run: |
-          gradle assembleDebug
+        run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: PediMed-Native-APK
           path: app/build/outputs/apk/debug/*.apk
+```
