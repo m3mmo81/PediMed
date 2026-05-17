@@ -70,14 +70,22 @@ jobs:
           }
           EOF
 
-          # 4. Glavni Gradle fajl za konfiguraciju Android aplikacije
+          # 4. Glavni Gradle fajl - POPRAVLJEN I BEZ \n KOSAČA
           cat << 'EOF' > build.gradle
           buildscript {
-              repositories { google() \n mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.2.2'
+              }
           }
           allprojects {
-              repositories { google() \n mavenCentral() }
+              repositories {
+                  google()
+                  mavenCentral()
+              }
           }
           EOF
 
