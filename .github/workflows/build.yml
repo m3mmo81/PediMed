@@ -1,4 +1,3 @@
-```yaml
 name: Build Android WebView
 
 on:
@@ -20,7 +19,6 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      # FIX: v3 koristi Node.js 20 koji je deprecated
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
@@ -194,4 +192,3 @@ jobs:
         with:
           name: PediMed-Native-APK
           path: app/build/outputs/apk/debug/*.apk
-```
