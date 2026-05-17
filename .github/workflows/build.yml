@@ -1,4 +1,4 @@
-name: Build Android WebView
+name: Build Android APK
 
 on:
   push:
@@ -9,33 +9,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout source
         uses: actions/checkout@v4
-
-      # OVDJE JE BIO PROBLEM
-      # cache: gradle trazi postojece gradle fajlove prije nego sto ih ti kreiras
-      # zato ga uklanjamo
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Create Native Android Project
+      - name: Create Android Project
         run: |
 
           mkdir -p app/src/main/java/com/pedimed/app
           mkdir -p app/src/main/res/layout
 
-          cat > settings.gradle <<EOF
-          include ':app'
-          EOF
+          echo "rootProject.name='PediMed'" > settings.gradle
+          echo "include ':app'" >> settings.gradle
 
-          cat > build.gradle <<EOF
+          cat > build.gradle <<'EOF'
           buildscript {
               repositories {
                   google()
@@ -55,19 +50,35 @@ jobs:
           }
           EOF
 
-          mkdir -p app
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
 
-          cat > app/build.gradle <<EOF
-          apply plugin: 'com.android.application'
+          mkdir -p gradle/wrapper
+
+          cat > gradle/wrapper/gradle-wrapper.properties <<'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
 
           android {
               namespace 'com.pedimed.app'
-              compileSdkVersion 34
+              compileSdk 34
 
               defaultConfig {
                   applicationId "com.pedimed.app"
-                  minSdkVersion 24
-                  targetSdkVersion 34
+                  minSdk 24
+                  targetSdk 34
                   versionCode 1
                   versionName "1.0"
               }
@@ -77,11 +88,11 @@ jobs:
                       minifyEnabled false
                   }
               }
-          }
 
-          repositories {
-              google()
-              mavenCentral()
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
           }
 
           dependencies {
@@ -89,7 +100,7 @@ jobs:
           }
           EOF
 
-          cat > app/src/main/AndroidManifest.xml <<EOF
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.pedimed.app">
 
@@ -97,7 +108,7 @@ jobs:
 
               <application
                   android:label="PediMed"
-                  android:theme="@android:style/Theme.NoTitleBar">
+                  android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
 
                   <activity
                       android:name=".MainActivity"
@@ -109,19 +120,20 @@ jobs:
                       </intent-filter>
 
                   </activity>
+
               </application>
 
           </manifest>
           EOF
 
-          cat > app/src/main/res/layout/activity_main.xml <<EOF
+          cat > app/src/main/res/layout/activity_main.xml <<'EOF'
           <WebView xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/webview"
               android:layout_width="match_parent"
               android:layout_height="match_parent"/>
           EOF
 
-          cat > app/src/main/java/com/pedimed/app/MainActivity.java <<EOF
+          cat > app/src/main/java/com/pedimed/app/MainActivity.java <<'EOF'
           package com.pedimed.app;
 
           import android.app.Activity;
@@ -149,7 +161,7 @@ jobs:
           gradle wrapper
 
       - name: Build APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
