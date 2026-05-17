@@ -112,6 +112,12 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
+              // DIO KOJI PREIMENUJE FAJL U PediMed.apk:
+              applicationVariants.all { variant ->
+                  variant.outputs.all {
+                      outputFileName = "PediMed.apk"
+                  }
+              }
           }
           EOF
 
