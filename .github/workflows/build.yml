@@ -26,12 +26,30 @@ jobs:
 
           mkdir -p app/src/main/java/com/pedimed/app
           mkdir -p app/src/main/res/layout
+          mkdir -p gradle/wrapper
 
           echo "rootProject.name='PediMed'" > settings.gradle
           echo "include ':app'" >> settings.gradle
 
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
+
+          cat > gradle/wrapper/gradle-wrapper.properties <<'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
           cat > build.gradle <<'EOF'
           buildscript {
+
+              ext.kotlin_version = '1.8.22'
+
               repositories {
                   google()
                   mavenCentral()
@@ -39,6 +57,7 @@ jobs:
 
               dependencies {
                   classpath 'com.android.tools.build:gradle:8.2.2'
+                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
               }
           }
 
@@ -50,21 +69,7 @@ jobs:
           }
           EOF
 
-          cat > gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx2048m
-          android.useAndroidX=true
-          android.enableJetifier=true
-          EOF
-
-          mkdir -p gradle/wrapper
-
-          cat > gradle/wrapper/gradle-wrapper.properties <<'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
+          mkdir -p app
 
           cat > app/build.gradle <<'EOF'
           plugins {
@@ -92,6 +97,23 @@ jobs:
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
+              }
+
+              packaging {
+                  resources {
+                      excludes += [
+                              'META-INF/LICENSE.md',
+                              'META-INF/LICENSE-notice.md'
+                      ]
+                  }
+              }
+          }
+
+          configurations.all {
+              resolutionStrategy {
+                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
               }
           }
 
