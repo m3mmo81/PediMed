@@ -27,7 +27,6 @@ jobs:
           mkdir -p app/src/main/res/mipmap-xxhdpi
           mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-          # KOPIRANJE TVOJE IKONE U PROJEKAT (Ako si je ubacio na GitHub)
           if [ -f "icon.png" ]; then
             cp icon.png app/src/main/res/mipmap-mdpi/ic_launcher.png
             cp icon.png app/src/main/res/mipmap-hdpi/ic_launcher.png
@@ -36,7 +35,6 @@ jobs:
             cp icon.png app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           fi
 
-          # 1. Manifest sa dozvolom za internet i ikonom
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.pedimed.app">
               <uses-permission android:name="android.permission.INTERNET" />
@@ -51,7 +49,6 @@ jobs:
           </manifest>
           EOF
 
-          # 2. Izgled ekrana (WebView preko cijelog ekrana)
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
           <WebView xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/webview"
@@ -59,7 +56,6 @@ jobs:
               android:layout_height="match_parent" />
           EOF
 
-          # 3. Čist Java kod koji učitava tvoj Streamlit sajt
           cat << 'EOF' > app/src/main/java/com/pedimed/app/MainActivity.java
           package com.pedimed.app;
           import android.app.Activity;
@@ -84,7 +80,6 @@ jobs:
           }
           EOF
 
-          # 4. Glavni Gradle fajl
           cat << 'EOF' > build.gradle
           buildscript {
               repositories {
@@ -103,8 +98,6 @@ jobs:
           }
           EOF
 
-          # 5. Modul aplikacije i verzije za Play Store
-          # OVDJE MIJENJAŠ DETALJE AKO TI TREBA:
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -113,16 +106,15 @@ jobs:
               namespace 'com.pedimed.app'
               compileSdk 34
               defaultConfig {
-                  applicationId "com.pedimed.app"  # Jedinstveni ID na Store-u
+                  applicationId "com.pedimed.app"
                   minSdk 24
                   targetSdk 34
-                  versionCode 1                   # Za svaki novi update na Store-u povećaš ovaj broj za 1 (2, 3, 4...)
-                  versionName "1.0"               # Tekstualna verzija aplikacije za ljude (npr. "1.1")
+                  versionCode 1
+                  versionName "1.0"
               }
           }
           EOF
 
-          # 6. Postavke projekta
           echo "include ':app'" > settings.gradle
 
       - name: Build APK
