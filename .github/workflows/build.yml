@@ -21,12 +21,26 @@ jobs:
         run: |
           mkdir -p app/src/main/java/com/pedimed/app
           mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-          # 1. Manifest sa dozvolom za internet
+          # KOPIRANJE TVOJE IKONE U PROJEKAT (Ako si je ubacio na GitHub)
+          if [ -f "icon.png" ]; then
+            cp icon.png app/src/main/res/mipmap-mdpi/ic_launcher.png
+            cp icon.png app/src/main/res/mipmap-hdpi/ic_launcher.png
+            cp icon.png app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            cp icon.png app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            cp icon.png app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          fi
+
+          # 1. Manifest sa dozvolom za internet i ikonom
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.pedimed.app">
               <uses-permission android:name="android.permission.INTERNET" />
-              <application android:label="PediMed Safe" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true">
+              <application android:label="PediMed Safe" android:icon="@mipmap/ic_launcher" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -45,7 +59,7 @@ jobs:
               android:layout_height="match_parent" />
           EOF
 
-          # 3. Čist Java kod koji učitava tvoj Streamlit sajt i glumi mobilni Chrome
+          # 3. Čist Java kod koji učitava tvoj Streamlit sajt
           cat << 'EOF' > app/src/main/java/com/pedimed/app/MainActivity.java
           package com.pedimed.app;
           import android.app.Activity;
@@ -70,7 +84,7 @@ jobs:
           }
           EOF
 
-          # 4. Glavni Gradle fajl - POPRAVLJEN I BEZ \n KOSAČA
+          # 4. Glavni Gradle fajl
           cat << 'EOF' > build.gradle
           buildscript {
               repositories {
@@ -90,6 +104,7 @@ jobs:
           EOF
 
           # 5. Modul aplikacije i verzije za Play Store
+          # OVDJE MIJENJAŠ DETALJE AKO TI TREBA:
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -98,11 +113,11 @@ jobs:
               namespace 'com.pedimed.app'
               compileSdk 34
               defaultConfig {
-                  applicationId "com.pedimed.app"
+                  applicationId "com.pedimed.app"  # Jedinstveni ID na Store-u
                   minSdk 24
                   targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
+                  versionCode 1                   # Za svaki novi update na Store-u povećaš ovaj broj za 1 (2, 3, 4...)
+                  versionName "1.0"               # Tekstualna verzija aplikacije za ljude (npr. "1.1")
               }
           }
           EOF
