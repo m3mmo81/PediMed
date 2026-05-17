@@ -1,37 +1,113 @@
-name: Build Android APK
+name: Build Android WebView
 on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Install dependencies
+      - name: Create Native Android Project
         run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev tk-dev libgdbm-compat-dev
-          pip install --upgrade pip
-          pip install buildozer cython virtualenv
+          mkdir -p app/src/main/java/com/pedimed/app
+          mkdir -p app/src/main/res/layout
+
+          # 1. Manifest sa dozvolom za internet
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.pedimed.app">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application android:label="PediMed Safe" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          # 2. Izgled ekrana (WebView preko cijelog ekrana)
+          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          <WebView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/webview"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent" />
+          EOF
+
+          # 3. Čist Java kod koji učitava tvoj Streamlit sajt i glumi mobilni Chrome
+          cat << 'EOF' > app/src/main/java/com/pedimed/app/MainActivity.java
+          package com.pedimed.app;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_main);
+                  WebView myWebView = (WebView) findViewById(R.id.webview);
+                  WebSettings webSettings = myWebView.getSettings();
+                  webSettings.setJavaScriptEnabled(true);
+                  webSettings.setDomStorageEnabled(true);
+                  webSettings.setUserAgentString("Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36");
+                  myWebView.setWebViewClient(new WebViewClient());
+                  myWebView.loadUrl("https://pedimed-cqpzmf9jxtueqkplhpyppn.streamlit.app/");
+              }
+          }
+          EOF
+
+          # 4. Glavni Gradle fajl za konfiguraciju Android aplikacije
+          cat << 'EOF' > build.gradle
+          buildscript {
+              repositories { google() \n mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+          }
+          allprojects {
+              repositories { google() \n mavenCentral() }
+          }
+          EOF
+
+          # 5. Modul aplikacije i verzije za Play Store
+          cat << 'EOF' > app/build.gradle
+          plugins {
+              id 'com.android.application'
+          }
+          android {
+              namespace 'com.pedimed.app'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.pedimed.app"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          EOF
+
+          # 6. Postavke projekta
+          echo "include ':app'" > settings.gradle
 
       - name: Build APK
         run: |
-          buildozer android debug
+          gradle assembleDebug
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: PediMed-APK
-          path: bin/*.apk
+          name: PediMed-Native-APK
+          path: app/build/outputs/apk/debug/*.apk
