@@ -56,9 +56,12 @@ jobs:
               android:layout_height="match_parent" />
           EOF
 
+          # 3. NADOGRAĐENI JAVA KOD KOJI PREPOZNAJE KLIKOVE NA SVE TVOJE LINKOVE
           cat << 'EOF' > app/src/main/java/com/pedimed/app/MainActivity.java
           package com.pedimed.app;
           import android.app.Activity;
+          import android.content.Intent;
+          import android.net.Uri;
           import android.os.Bundle;
           import android.webkit.WebSettings;
           import android.webkit.WebView;
@@ -74,7 +77,20 @@ jobs:
                   webSettings.setJavaScriptEnabled(true);
                   webSettings.setDomStorageEnabled(true);
                   webSettings.setUserAgentString("Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36");
-                  myWebView.setWebViewClient(new WebViewClient());
+                  
+                  myWebView.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                          // Ako klikneš na bilo šta što vodi na tvoj sajt drkarabeg.ba, otvori eksterni browser telefona
+                          if (url != null && url.contains("drkarabeg.ba")) {
+                              Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                              view.getContext().startActivity(intent);
+                              return true;
+                          }
+                          // Sve ostalo (Streamlit kalkulator) ostaje unutar aplikacije
+                          return false;
+                      }
+                  });
                   myWebView.loadUrl("https://pedimed-cqpzmf9jxtueqkplhpyppn.streamlit.app/");
               }
           }
@@ -112,7 +128,6 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
-              // DIO KOJI PREIMENUJE FAJL U PediMed.apk:
               applicationVariants.all { variant ->
                   variant.outputs.all {
                       outputFileName = "PediMed.apk"
