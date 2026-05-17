@@ -27,12 +27,12 @@ jobs:
           mkdir -p app/src/main/res/mipmap-xxhdpi
           mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-          if [ -f "icon.png" ]; then
-            cp icon.png app/src/main/res/mipmap-mdpi/ic_launcher.png
-            cp icon.png app/src/main/res/mipmap-hdpi/ic_launcher.png
-            cp icon.png app/src/main/res/mipmap-xhdpi/ic_launcher.png
-            cp icon.png app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-            cp icon.png app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          if [ -f "pedimed.png" ]; then
+            cp pedimed.png app/src/main/res/mipmap-mdpi/ic_launcher.png
+            cp pedimed.png app/src/main/res/mipmap-hdpi/ic_launcher.png
+            cp pedimed.png app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            cp pedimed.png app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            cp pedimed.png app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           fi
 
           cat << 'EOF' > app/src/main/AndroidManifest.xml
