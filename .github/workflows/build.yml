@@ -1,66 +1,95 @@
-name: Build Android APK
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: false
-
-on:
-  push:
-  workflow_dispatch:
+name: Build Android WebView
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v5
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@v3
 
-      - name: Create Android Project
+      - name: Create Native Android Project
         run: |
-
           mkdir -p app/src/main/java/com/pedimed/app
           mkdir -p app/src/main/res/layout
-          mkdir -p gradle/wrapper
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-          echo "rootProject.name='PediMed'" > settings.gradle
-          echo "include ':app'" >> settings.gradle
+          if [ -f "icon.png" ]; then
+            cp icon.png app/src/main/res/mipmap-mdpi/ic_launcher.png
+            cp icon.png app/src/main/res/mipmap-hdpi/ic_launcher.png
+            cp icon.png app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            cp icon.png app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            cp icon.png app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          fi
 
-          cat > gradle.properties <<EOF
-          org.gradle.jvmargs=-Xmx2048m
-          android.useAndroidX=true
-          android.enableJetifier=true
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.pedimed.app">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application android:label="PediMed Safe" android:icon="@mipmap/ic_launcher" android:theme="@android:style/Theme.NoTitleBar" android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
           EOF
 
-          cat > gradle/wrapper/gradle-wrapper.properties <<EOF
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
+          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          <WebView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/webview"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent" />
           EOF
 
-          cat > build.gradle <<EOF
+          cat << 'EOF' > app/src/main/java/com/pedimed/app/MainActivity.java
+          package com.pedimed.app;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_main);
+                  WebView myWebView = (WebView) findViewById(R.id.webview);
+                  WebSettings webSettings = myWebView.getSettings();
+                  webSettings.setJavaScriptEnabled(true);
+                  webSettings.setDomStorageEnabled(true);
+                  webSettings.setUserAgentString("Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36");
+                  myWebView.setWebViewClient(new WebViewClient());
+                  myWebView.loadUrl("https://pedimed-cqpzmf9jxtueqkplhpyppn.streamlit.app/");
+              }
+          }
+          EOF
+
+          cat << 'EOF' > build.gradle
           buildscript {
               repositories {
                   google()
                   mavenCentral()
               }
-
               dependencies {
-                  classpath 'com.android.tools.build:gradle:8.1.4'
+                  classpath 'com.android.tools.build:gradle:8.2.2'
               }
           }
-
           allprojects {
               repositories {
                   google()
@@ -69,15 +98,13 @@ jobs:
           }
           EOF
 
-          cat > app/build.gradle <<EOF
+          cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
           }
-
           android {
               namespace 'com.pedimed.app'
               compileSdk 34
-
               defaultConfig {
                   applicationId "com.pedimed.app"
                   minSdk 24
@@ -85,92 +112,23 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
-
-              buildTypes {
-                  release {
-                      minifyEnabled false
+              // DIO KOJI PREIMENUJE FAJL U PediMed.apk:
+              applicationVariants.all { variant ->
+                  variant.outputs.all {
+                      outputFileName = "PediMed.apk"
                   }
               }
-
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
-          }
-
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           EOF
 
-          cat > app/src/main/AndroidManifest.xml <<EOF
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.pedimed.app">
-
-              <uses-permission android:name="android.permission.INTERNET"/>
-
-              <application
-                  android:label="PediMed"
-                  android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true">
-
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-
-                  </activity>
-
-              </application>
-          </manifest>
-          EOF
-
-          cat > app/src/main/res/layout/activity_main.xml <<EOF
-          <WebView xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/webview"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"/>
-          EOF
-
-          cat > app/src/main/java/com/pedimed/app/MainActivity.java <<EOF
-          package com.pedimed.app;
-
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
-
-          public class MainActivity extends Activity {
-
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-
-                  WebView webView = new WebView(this);
-                  setContentView(webView);
-
-                  webView.getSettings().setJavaScriptEnabled(true);
-                  webView.setWebViewClient(new WebViewClient());
-
-                  webView.loadUrl("https://pedimed-cqpzmf9jxtueqkplhpyppn.streamlit.app/");
-              }
-          }
-          EOF
-
-          curl -L https://services.gradle.org/distributions/gradle-8.4-bin.zip -o gradle.zip
-          unzip -q gradle.zip
-          chmod +x gradle-8.4/bin/gradle
-
-          gradle-8.4/bin/gradle wrapper
+          echo "include ':app'" > settings.gradle
 
       - name: Build APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          gradle assembleDebug
 
       - name: Upload APK
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: PediMed-Native-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
