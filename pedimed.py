@@ -9,7 +9,7 @@ DRUG_DATABASE = {
     },
     "Neofen / Ibuprofen sirup (100mg/5ml)": {
         "dnevna_mg_kg": 20, "max_dan_fiksno": 1200, "mg_u_5ml": 100, "interval": 6, 
-        "tip": "sirup", "napomena": "Razmak min 4h. Dojenčad 3-12 mj: max 3 doze."
+        "tip": "sirup", "napomena": "Razmak min 4h."
     },
     "Paracetamol čepići (80mg)": {"dnevna_mg_kg": 40, "max_dan_fiksno": 800, "mg_u_jedinici": 80, "interval": 6, "tip": "supozitorija", "napomena": ""},
     "Paracetamol čepići (120mg)": {
@@ -44,7 +44,7 @@ st.title("⚖️ PediMed: Pedijatrijski Kalkulator Lijekova")
 bih_zona = timezone(timedelta(hours=2))
 trenutno = datetime.now(bih_zona)
 
-# 1. UNOS PODATAKA WITH PERFECT ALIGNMENT
+# 1. UNOS PODATAKA WITH PERFECT ALIGNMENT (Sada pročišćeno bez uzrasta djeteta)
 col1, col2 = st.columns(2)
 
 with col1:
@@ -52,14 +52,6 @@ with col1:
     drug_name = st.selectbox("Odaberite lijek:", list(DRUG_DATABASE.keys()))
 
 with col2:
-    age_col1, age_col2 = st.columns(2)
-    with age_col1:
-        years = st.number_input("Starost djeteta (godine):", min_value=0, max_value=18, value=2)
-    with age_col2:
-        extra_months = st.number_input("Starost djeteta (mjeseci):", min_value=0, max_value=11, value=0)
-    
-    total_months = (years * 12) + extra_months
-    
     time_col1, time_col2 = st.columns(2)
     with time_col1:
         vrijeme_sati = st.number_input("Vrijeme prve doze (sati):", min_value=0, max_value=23, value=trenutno.hour)
@@ -75,9 +67,8 @@ if st.button("IZRAČUNAJ"):
     if drug_name == "Ibuprofen čepići (60mg)":
         if weight < 6.0:
             st.error("❌ Lijek se ne smije primjenjivati u djece tjelesne mase manje od 6,0 kg.")
+            st.warning("⚠️ Ne smije se koristiti u dojenčadi mlađe od 3 mjeseca bez savjeta liječnika.")
             st.stop()
-        if total_months < 3:
-            st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjeseca bez savjeta liječnika.")
 
     # --- DIREKTNA KLINIČKA VERIFIKACIJA I FILTRIRANJE ČEPIĆA ---
     if "Paracetamol čepići" in drug_name:
@@ -260,11 +251,6 @@ if st.button("IZRAČUNAJ"):
 
     with st.expander("ℹ️ Važne napomene za odabrani lijek"):
         if data["napomena"]: st.info(data["napomena"])
-        if drug_name == "Ibuprofen čepići (60mg)":
-            if 3 <= total_months <= 5:
-                st.warning("Ako se simptomi ne povuku unutar 24 sata, obavezno potražiti savjet liječnika.")
-            if total_months >= 6:
-                st.warning("Ako je lijek potrebno uzimati duže od 3 dana, zatražiti savjet liječnika.")
         st.write("- **Opća napomena:** Ne miješati s drugim lijekovima iste aktivne tvari.")
         st.write("- U slučaju pogoršanja simptoma, odmah kontaktirati ljekara.")
 
