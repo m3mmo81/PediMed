@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta, time
 
 # --- BAZA PODATAKA ---
-# "dnevna_mg_kg" predstavlja početnu preporučenu terapijsku dozu (40 mg/kg za paracetamol, 20 mg/kg za ibuprofen)
+# "dnevna_mg_kg" predstavlja početnu preporučenu terapijsku dozu (40 mg/kg za paracetamol, 20 mg/kg za ibuprofen, 2 mg/kg za voltaren)
 DRUG_DATABASE = {
     "Paracetamol sirup (120mg/5ml)": {
         "dnevna_mg_kg": 40, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
@@ -25,7 +25,15 @@ DRUG_DATABASE = {
         "tip": "supozitorija", 
         "napomena": "Ne koristiti za djecu <6kg. Razmak min 6-8h. Ne lomiti čepiće."
     },
-    "Ibuprofen čepići (125mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_jedinici": 125, "interval": 8, "tip": "supozitorija", "napomena": ""}
+    "Ibuprofen čepići (125mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_jedinici": 125, "interval": 8, "tip": "supozitorija", "napomena": ""},
+    "Voltaren / Diklofenak čepići (12,5mg)": {
+        "dnevna_mg_kg": 2, "max_dan_fiksno": 150, "mg_u_jedinici": 12.5, "interval": 12, 
+        "tip": "supozitorija", "napomena": "Isključivo cijeli čepići (ne lomiti). Maksimalna dnevna doza je 3 mg/kg/dan."
+    },
+    "Voltaren / Diklofenak čepići (25mg)": {
+        "dnevna_mg_kg": 2, "max_dan_fiksno": 150, "mg_u_jedinici": 25, "interval": 12, 
+        "tip": "supozitorija", "napomena": "Isključivo cijeli čepići (ne lomiti). Maksimalna dnevna doza je 3 mg/kg/dan."
+    }
 }
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="centered")
@@ -58,7 +66,7 @@ with col2:
     with time_col2:
         vrijeme_minuti = st.number_input("Vrijeme prve doze (minuti):", min_value=0, max_value=59, value=trenutno.minute)
     
-    start_time = time(vrijeme_sati, vrijeme_minuti)
+    start_time = time(vrijeme_sati, समय_minuti) if 'vrijeme_minuti' in locals() else time(vrijeme_sati, vrijeme_minuti)
 
 data = DRUG_DATABASE[drug_name]
 
@@ -101,7 +109,6 @@ if st.button("IZRAČUNAJ"):
         max_dnevna_ibu = weight * 30
         odabrana_jacina = data["mg_u_jedinici"]
         
-        # Prvo evaluiramo koji režim (3x ili 4x) odgovara ZA TRENUTNO ODABRANI ČEPIĆ
         validan_rezim_za_odabrani = None
         
         if min_dnevna_ibu <= (odabrana_jacina * 3) <= max_dnevna_ibu:
@@ -109,16 +116,12 @@ if st.button("IZRAČUNAJ"):
         elif min_dnevna_ibu <= (odabrana_jacina * 4) <= max_dnevna_ibu:
             validan_rezim_za_odabrani = {"broj_davanja": 4, "interval": 6, "opis": "4 puta dnevno (na 6 sati)"}
             
-        # Provjera alternativnih opcija na tržištu (za tekstualni savjet roditelju)
         adekvatne_alternative = []
-        # Provjera za 60mg
         if min_dnevna_ibu <= (60 * 3) <= max_dnevna_ibu: adekvatne_alternative.append("60mg (3x dnevno)")
         elif min_dnevna_ibu <= (60 * 4) <= max_dnevna_ibu: adekvatne_alternative.append("60mg (4x dnevno)")
-        # Provjera za 125mg
         if min_dnevna_ibu <= (125 * 3) <= max_dnevna_ibu: adekvatne_alternative.append("125mg (3x dnevno)")
         elif min_dnevna_ibu <= (125 * 4) <= max_dnevna_ibu: adekvatne_alternative.append("125mg (4x dnevno)")
 
-        # Ako odabrani čepić u kombinaciji sa 3x ili 4x ne daje ispravan raspon:
         if not validan_rezim_za_odabrani:
             st.error(f"❌ **Neodgovarajuće doziranje čepića!**")
             st.write(f"Trenutno odabrani čepić od **{odabrana_jacina}mg** (bilo da se daje 3x ili 4x dnevno) ne može ispuniti siguran opseg za težinu od {weight} kg.")
@@ -134,9 +137,33 @@ if st.button("IZRAČUNAJ"):
                 )
             st.stop()
         else:
-            # Ako je pronađen validan režim, dinamički prepisujemo interval i broj davanja u data objekt
             data["interval"] = validan_rezim_za_odabrani["interval"]
             rezim_opis = validan_rezim_za_odabrani["opis"]
+
+    # --- DIREKTNA KLINIČKA VERIFIKACIJA ZA VOLTAREN ČEPIĆE ---
+    elif "Voltaren" in drug_name:
+        min_dnevna_volt = weight * 2
+        max_dnevna_volt = weight * 3
+        odabrana_jacina = data["mg_u_jedinici"]
+        
+        validan_rezim_volt = None
+        if min_dnevna_volt <= (odabrana_jacina * 2) <= max_dnevna_volt:
+            validan_rezim_volt = {"broj_davanja": 2, "interval": 12, "opis": "2 puta dnevno (na 12 sati)"}
+        elif min_dnevna_volt <= (odabrana_jacina * 3) <= max_dnevna_volt:
+            validan_rezim_volt = {"broj_davanja": 3, "interval": 8, "opis": "3 puta dnevno (na 8 sati)"}
+            
+        if not validan_rezim_volt:
+            st.error(f"❌ **Neodgovarajuća jačina čepića!**")
+            st.write(f"Odabrani Voltaren čepić od **{odabrana_jacina}mg** (bilo 2x ili 3x dnevno) izlazi iz sigurnog terapeutskog raspona od **2-3 mg/kg/dan** za težinu od **{weight} kg**.")
+            st.warning(
+                "💡 **Klinički savjet:** Doza fiksne supozitorije se ne uklapa u sigurne granice za ovu težinu. "
+                "Molimo vas da razmotrite druge dostupne **paracetamol/ibuprofen sirupe** ili **čepiće** unutar aplikacije "
+                "kako biste dozu prilagodili djetetu bez rizika od nuspojava."
+            )
+            st.stop()
+        else:
+            data["interval"] = validan_rezim_volt["interval"]
+            rezim_opis = validan_rezim_volt["opis"]
 
     st.divider()
     
@@ -179,15 +206,20 @@ if st.button("IZRAČUNAJ"):
         sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg ({terapijska_ml_24h} ml)\n\n**Maksimalno (30 mg/kg):** {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)"
         
     else:
-        # Čepići
-        apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"]) if "Paracetamol" in drug_name else min(weight * 30, data["max_dan_fiksno"])
+        # Čepići (Paracetamol, Ibuprofen, Voltaren)
+        if "Paracetamol" in drug_name:
+            apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
+        elif "Ibuprofen" in drug_name:
+            apsolutni_max_24h = min(weight * 30, data["max_dan_fiksno"])
+        else: # Voltaren
+            apsolutni_max_24h = min(weight * 3, data["max_dan_fiksno"])
         
         naslov_lijeva = "🔷 POJEDINAČNA DOZA ČEPIĆA:"
         sadrzaj_lijeva = f"**1 čepić**\n\n({data['mg_u_jedinici']} mg)"
         plan_ispis = f"1 čepić ({data['mg_u_jedinici']} mg)"
         
         naslov_desna = "🟩 UKUPNO KROZ 24 SATA:"
-        if "Ibuprofen" in drug_name:
+        if "Ibuprofen" in drug_name or "Voltaren" in drug_name:
             sadrzaj_desna = f"**Režim doziranja:** {rezim_opis}\n\n**Ukupno u 24h:** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
         else:
             sadrzaj_desna = f"**Unos odabranog čepića ({broj_doza}x dnevno):** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
@@ -220,7 +252,9 @@ if st.button("IZRAČUNAJ"):
     elif "Ibuprofen sirup" in drug_name:
         st.write(f"Za težinu od **{weight} kg**, maksimalna dopuštena dnevna doza ibuprofena iznosi **{apsolutni_max_ml_24h} ml** (ukupno {round(apsolutni_max_24h, 1)} mg na bazi 30 mg/kg/dan).")
     else:
-        limit_tekst = "60 mg/kg/dan" if "Paracetamol" in drug_name else "30 mg/kg/dan"
+        if "Paracetamol" in drug_name: limit_tekst = "60 mg/kg/dan"
+        elif "Ibuprofen" in drug_name: limit_tekst = "30 mg/kg/dan"
+        else: limit_tekst = "3 mg/kg/dan"
         st.write(f"Za težinu od **{weight} kg**, apsolutni dnevni maksimum iznosi **{round(apsolutni_max_24h, 1)} mg** ({limit_tekst}).")
     st.write("Nikada ne prelazite ovaj limit u slučaju da kombinujete različite oblike istog lijeka!")
 
