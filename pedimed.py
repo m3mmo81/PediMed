@@ -282,6 +282,9 @@ st.markdown("""
 ---
 📩 **Trebate savjet ili imate pitanje?** Možete me kontaktirati direktno putem kontakt forme na mojoj web stranici:  
 [**www.drkarabeg.ba**](https://drkarabeg.ba)
+
+📱 **Koristite Android mobitel?** Preuzmite zvaničnu Android aplikaciju za brži pristup:  
+[<img src="https://img.shields.io/badge/Preuzmi-Android%20App-green?style=for-the-badge&logo=android&logoColor=white" alt="Preuzmi Android App">](https://drkarabeg.ba/downloads/pedimed.apk)
 """, unsafe_allow_html=True)
 
 st.markdown(
