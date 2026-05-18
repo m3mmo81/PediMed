@@ -66,7 +66,7 @@ with col2:
     with time_col2:
         vrijeme_minuti = st.number_input("Vrijeme prve doze (minuti):", min_value=0, max_value=59, value=trenutno.minute)
     
-    start_time = time(vrijeme_sati, समय_minuti) if 'vrijeme_minuti' in locals() else time(vrijeme_sati, vrijeme_minuti)
+    start_time = time(vrijeme_sati, vrijeme_minuti)
 
 data = DRUG_DATABASE[drug_name]
 
@@ -77,7 +77,7 @@ if st.button("IZRAČUNAJ"):
             st.error("❌ Lijek se ne smije primjenjivati u djece tjelesne mase manje od 6,0 kg.")
             st.stop()
         if total_months < 3:
-            st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjeseca bez savjeta liječnika.")
+            st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjesecaamp bez savjeta liječnika.")
 
     # --- DIREKTNA KLINIČKA VERIFIKACIJA I FILTRIRANJE ČEPIĆA ---
     if "Paracetamol čepići" in drug_name:
