@@ -37,30 +37,97 @@ DRUG_DATABASE = {
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="centered")
 
-st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
-st.title("⚖️ PediMed: Pedijatrijski Kalkulator Lijekova")
+# --- CUSTOM CSS ZA VIZUALNI REDIZAJN (Pedijatrijski pastelni stil) ---
+st.markdown("""
+<style>
+    /* Pozadina i fontovi cijele aplikacije */
+    .stApp {
+        background-color: #F4F8FA !important;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
 
-# Ručno postavljamo vremensku zonu za BiH (+2 sata u odnosu na UTC) bez vanjskih biblioteka
-bih_zona = timezone(timedelta(hours=2))
-trenutno = datetime.now(bih_zona)
+    /* Info baner dobrodošlice */
+    div[data-testid="stInfoBlock"] {
+        background-color: #E3F2FD !important;
+        color: #0D47A1 !important;
+        border-left: 5px solid #2196F3 !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+    }
 
-# 1. UNOS PODATAKA WITH PERFECT ALIGNMENT
-col1, col2 = st.columns(2)
+    /* Glavni naslov kalkulatora */
+    h1 {
+        color: #1A365D !important;
+        font-weight: 700 !important;
+        font-size: 2.2rem !important;
+        text-align: center;
+        margin-bottom: 25px !important;
+    }
 
-with col1:
-    weight = st.number_input("Težina djeteta (kg):", min_value=1.0, max_value=120.0, value=12.0)
-    drug_name = st.selectbox("Odaberite lijek:", list(DRUG_DATABASE.keys()))
+    /* Stilovi za ulazna polja (kartice sa sjenom) */
+    div[data-testid="stNumberInput"], div[data-testid="stSelectbox"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 14px !important;
+        padding: 12px 18px 18px 18px !important;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03) !important;
+        margin-bottom: 15px !important;
+    }
 
-with col2:
-    time_col1, time_col2 = st.columns(2)
-    with time_col1:
-        vrijeme_sati = st.number_input("Vrijeme prve doze (sati):", min_value=0, max_value=23, value=trenutno.hour)
-    with time_col2:
-        vrijeme_minuti = st.number_input("Vrijeme prve doze (minuti):", min_value=0, max_value=59, value=trenutno.minute)
-    
-    start_time = time(vrijeme_sati, vrijeme_minuti)
+    /* Naslovi polja */
+    label[data-testid="stWidgetLabel"] p {
+        color: #2D3748 !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+    }
 
-data = DRUG_DATABASE[drug_name]
+    /* Glavno dugme IZRAČUNAJ */
+    div.stButton > button {
+        background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%) !important;
+        color: white !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        padding: 14px 40px !important;
+        border-radius: 30px !important;
+        border: none !important;
+        box-shadow: 0 4px 10px rgba(76,175,80,0.3) !important;
+        transition: all 0.2s ease-in-out !important;
+        width: 100% !important;
+        margin-top: 10px !important;
+    }
+    div.stButton > button:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 6px 14px rgba(76,175,80,0.4) !important;
+    }
+
+    /* Rezultati - doze u satnici */
+    div[data-testid="stNotification"] {
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        font-size: 1.05rem !important;
+    }
+
+    /* Crvene greške / Subdoziranja i prekoračenja */
+    div[data-testid="stErrorBlock"] {
+        background-color: #FFF5F5 !important;
+        color: #C53030 !important;
+        border-left: 5px solid #E53E3E !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+        font-weight: 500 !important;
+    }
+
+    /* Žuti prozor za automatski predložene alternative */
+    div[data-testid="stWarningBlock"] {
+        background-color: #FFFDF5 !important;
+        color: #975A16 !important;
+        border-left: 5px solid #ECC94B !important;
+        border-radius: 12px !important;
+        padding: 18px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02) !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # --- FUNKCIJA ZA AUTOMATSKO GENERISANJE ALTERNATIVA NA BAZI KILAŽE ---
 def prikazi_sve_dostupne_alternative(trenutna_tezina):
@@ -70,13 +137,13 @@ def prikazi_sve_dostupne_alternative(trenutna_tezina):
     p_mg = min((trenutna_tezina * 40) / 4, 4000 / 4)
     p_ml = round((p_mg * 5) / 120, 1)
     p_max_ml = round((min((trenutna_tezina * 60) / 4, 4000 / 4) * 5) / 120, 1)
-    st.write(f"🔹 **Paracetamol sirup (120mg/5ml):** Dati **{p_ml} ml** (Raspon: {p_ml} - {p_max_ml} ml) do 4 puta dnevno.")
+    st.write(f"🧴 **Paracetamol sirup (120mg/5ml):** Dati **{p_ml} ml** (Raspon: {p_ml} - {p_max_ml} ml) do 4 puta dnevno (na 6 sati).")
     
     # 2. Neofen/Ibuprofen sirup alternativa
     n_mg = min((trenutna_tezina * 20) / 3, 1200 / 3)
     n_ml = round((n_mg * 5) / 100, 1)
     n_max_ml = round((min((trenutna_tezina * 30) / 3, 1200 / 3) * 5) / 100, 1)
-    st.write(f"🔹 **Neofen / Ibuprofen sirup (100mg/5ml):** Dati **{n_ml} ml** (Raspon: {n_ml} - {n_max_ml} ml) do 3 puta dnevno.")
+    st.write(f"🧴 **Neofen / Ibuprofen sirup (100mg/5ml):** Dati **{n_ml} ml** (Raspon: {n_ml} - {n_max_ml} ml) do 3 puta dnevno (na 8 sati).")
     
     # 3. Provjera Paracetamol čepića
     p_cep_ok = []
@@ -105,6 +172,32 @@ def prikazi_sve_dostupne_alternative(trenutna_tezina):
     if v_cep_ok:
         st.write(f"🔹 **Voltaren čepići:** Adekvatna jačina je čepić od **" + " ili ".join(v_cep_ok) + "** (2 do 3 puta dnevno).")
 
+
+# --- ZAGLAVLJE STRANICE ---
+st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
+st.title("⚖️ PediMed Safe: Pedijatrijski Kalkulator")
+
+# Postavljanje vremenske zone za BiH (+2 sata ručno bez pytz ekstenzija)
+bih_zona = timezone(timedelta(hours=2))
+trenutno = datetime.now(bih_zona)
+
+# 1. UNOS PODATAKA WITH PERFECT ALIGNMENT
+col1, col2 = st.columns(2)
+
+with col1:
+    weight = st.number_input("Težina djeteta (kg):", min_value=1.0, max_value=120.0, value=12.0)
+    drug_name = st.selectbox("Odaberite lijek:", list(DRUG_DATABASE.keys()))
+
+with col2:
+    time_col1, time_col2 = st.columns(2)
+    with time_col1:
+        vrijeme_sati = st.number_input("Vrijeme prve doze (sati):", min_value=0, max_value=23, value=trenutno.hour)
+    with time_col2:
+        vrijeme_minuti = st.number_input("Vrijeme prve doze (minuti):", min_value=0, max_value=59, value=trenutno.minute)
+    
+    start_time = time(vrijeme_sati, vrijeme_minuti)
+
+data = DRUG_DATABASE[drug_name]
 
 if st.button("IZRAČUNAJ"):
     # --- VALIDACIJA ZA IBUPROFEN ČEPIĆE 6MG ---
@@ -210,7 +303,6 @@ if st.button("IZRAČUNAJ"):
         sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg ({terapijska_ml_24h} ml)\n\n**Maksimalno (30 mg/kg):** {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)"
         
     else:
-        # Ako je sve u redu sa čepićima, računa se standardni ispis
         if "Paracetamol" in drug_name:
             apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
         elif "Ibuprofen" in drug_name:
@@ -224,11 +316,11 @@ if st.button("IZRAČUNAJ"):
         
         naslov_desna = "🟩 UKUPNO KROZ 24 SATA:"
         if "Ibuprofen" in drug_name or "Voltaren" in drug_name:
-            sadrzaj_desna = f"**Režim doziranja:** {rezim_opis}\n\n**Ukupno u 24h:** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
+            sadrzaj_desna = f"**Režim davanja:** {rezim_opis}\n\n**Ukupno u 24h:** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
         else:
             sadrzaj_desna = f"**Unos odabranog čepića ({broj_doza}x dnevno):** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
 
-    # --- PRIKAZ OKVIRA ---
+    # --- PRIKAZ OKVIRA REZULTATA ---
     c1, c2 = st.columns(2)
     with c1:
         with st.container(border=True):
@@ -242,7 +334,7 @@ if st.button("IZRAČUNAJ"):
 
     st.write("") 
 
-    # Satnica
+    # Satnica davanja doza
     st.subheader("⏰ Plan davanja (24h) - Na bazi odabranog oblika:")
     current_time = datetime.combine(datetime.today(), start_time)
     for i in range(broj_doza):
@@ -288,7 +380,7 @@ st.markdown("""
 
 st.markdown(
     "<div style='font-size: 0.8em; color: gray; text-align: center; margin-top: 20px;'>"
-    "© " + str(datetime.now().year) + " Created by <a href='https://drkarabeg.ba' target='_blank' style='color: gray; text-decoration: underline;'>Karabeg dr Kemal</a> | PediMed Safe v1.5 |"
+    "© " + str(datetime.now().year) + " Created by <a href='https://drkarabeg.ba' target='_blank' style='color: gray; text-decoration: underline;'>Karabeg dr Kemal</a> | PediMed Safe v2.0 |"
     "</div>", 
     unsafe_allow_html=True
 )
