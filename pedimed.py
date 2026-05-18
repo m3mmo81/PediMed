@@ -1,6 +1,5 @@
 import streamlit as st
-from datetime import datetime, timedelta, time
-import pytz  # Uvozimo biblioteku za vremenske zone kako server ne bi kasnio 2 sata
+from datetime import datetime, timedelta, time, timezone
 
 # --- BAZA PODATAKA ---
 DRUG_DATABASE = {
@@ -41,9 +40,9 @@ st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="center
 st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
 st.title("⚖️ PediMed: Pedijatrijski Kalkulator Lijekova")
 
-# Postavljamo vremensku zonu na Sarajevo da sati na serveru ne bi kasnili 2 sata
-lokalna_zona = pytz.timezone("Europe/Sarajevo")
-trenutno = datetime.now(lokalna_zona)
+# Ručno postavljamo vremensku zonu za BiH (+2 sata u odnosu na UTC) bez vanjskih biblioteka
+bih_zona = timezone(timedelta(hours=2))
+trenutno = datetime.now(bih_zona)
 
 # 1. UNOS PODATAKA WITH PERFECT ALIGNMENT
 col1, col2 = st.columns(2)
@@ -72,7 +71,7 @@ with col2:
 data = DRUG_DATABASE[drug_name]
 
 if st.button("IZRAČUNAJ"):
-    # --- VALIDACIJA ZA IBUPROFEN ČEPIĆE 60MG ---
+    # --- VALIDACIJA ZA IBUPROFEN ČEPIĆE 6MG ---
     if drug_name == "Ibuprofen čepići (60mg)":
         if weight < 6.0:
             st.error("❌ Lijek se ne smije primjenjivati u djece tjelesne mase manje od 6,0 kg.")
