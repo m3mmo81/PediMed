@@ -28,11 +28,11 @@ DRUG_DATABASE = {
     "Ibuprofen čepići (125mg)": {"dnevna_mg_kg": 30, "max_dan_fiksno": 1200, "mg_u_jedinici": 125, "interval": 8, "tip": "supozitorija", "napomena": ""},
     "Voltaren / Diklofenak čepići (12,5mg)": {
         "dnevna_mg_kg": 2, "max_dan_fiksno": 150, "mg_u_jedinici": 12.5, "interval": 12, 
-        "tip": "supozitorija", "napomena": "Isključivo cijeli čepići (ne lomiti). Maksimalna dnevna doza je 3 mg/kg/dan."
+        "tip": "supozitorija", "napomena": "Isključivo cijeli čepići (ne lomiti). Dozira se 2 do 3 puta dnevno. Maksimalna dnevna doza je 3 mg/kg/dan."
     },
     "Voltaren / Diklofenak čepići (25mg)": {
         "dnevna_mg_kg": 2, "max_dan_fiksno": 150, "mg_u_jedinici": 25, "interval": 12, 
-        "tip": "supozitorija", "napomena": "Isključivo cijeli čepići (ne lomiti). Maksimalna dnevna doza je 3 mg/kg/dan."
+        "tip": "supozitorija", "napomena": "Isključivo cijeli čepići (ne lomiti). Dozira se 2 do 3 puta dnevno. Maksimalna dnevna doza je 3 mg/kg/dan."
     }
 }
 
@@ -77,7 +77,7 @@ if st.button("IZRAČUNAJ"):
             st.error("❌ Lijek se ne smije primjenjivati u djece tjelesne mase manje od 6,0 kg.")
             st.stop()
         if total_months < 3:
-            st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjesecaamp bez savjeta liječnika.")
+            st.warning("⚠️ Ne smije se koristiti u djece mlađe od 3 mjeseca bez savjeta liječnika.")
 
     # --- DIREKTNA KLINIČKA VERIFIKACIJA I FILTRIRANJE ČEPIĆA ---
     if "Paracetamol čepići" in drug_name:
@@ -140,13 +140,14 @@ if st.button("IZRAČUNAJ"):
             data["interval"] = validan_rezim_za_odabrani["interval"]
             rezim_opis = validan_rezim_za_odabrani["opis"]
 
-    # --- DIREKTNA KLINIČKA VERIFIKACIJA ZA VOLTAREN ČEPIĆE ---
+    # --- DIREKTNA KLINIČKA VERIFIKACIJA ZA VOLTAREN ČEPIĆE (2x ILI 3x DNEVNO) ---
     elif "Voltaren" in drug_name:
         min_dnevna_volt = weight * 2
         max_dnevna_volt = weight * 3
         odabrana_jacina = data["mg_u_jedinici"]
         
         validan_rezim_volt = None
+        # Evaluacija: da li se jačina uklapa u režim 2x dnevno ili 3x dnevno
         if min_dnevna_volt <= (odabrana_jacina * 2) <= max_dnevna_volt:
             validan_rezim_volt = {"broj_davanja": 2, "interval": 12, "opis": "2 puta dnevno (na 12 sati)"}
         elif min_dnevna_volt <= (odabrana_jacina * 3) <= max_dnevna_volt:
@@ -154,9 +155,9 @@ if st.button("IZRAČUNAJ"):
             
         if not validan_rezim_volt:
             st.error(f"❌ **Neodgovarajuća jačina čepića!**")
-            st.write(f"Odabrani Voltaren čepić od **{odabrana_jacina}mg** (bilo 2x ili 3x dnevno) izlazi iz sigurnog terapeutskog raspona od **2-3 mg/kg/dan** za težinu od **{weight} kg**.")
+            st.write(f"Odabrani Voltaren čepić od **{odabrana_jacina}mg** (bilo u režimu 2x ili 3x dnevno) izlazi iz sigurnog terapeutskog raspona od **2-3 mg/kg/dan** za težinu od **{weight} kg**.")
             st.warning(
-                "💡 **Klinički savjet:** Doza fiksne supozitorije se ne uklapa u sigurne granice za ovu težinu. "
+                "💡 **Klinički savjet:** Doza ove fiksne supozitorije se ne uklapa u sigurne granice. "
                 "Molimo vas da razmotrite druge dostupne **paracetamol/ibuprofen sirupe** ili **čepiće** unutar aplikacije "
                 "kako biste dozu prilagodili djetetu bez rizika od nuspojava."
             )
