@@ -1,8 +1,8 @@
 import streamlit as st
 from datetime import datetime, timedelta, time
+import pytz  # Uvozimo biblioteku za vremenske zone kako server ne bi kasnio 2 sata
 
 # --- BAZA PODATAKA ---
-# "dnevna_mg_kg" predstavlja početnu preporučenu terapijsku dozu (40 mg/kg za paracetamol, 20 mg/kg za ibuprofen, 2 mg/kg za voltaren)
 DRUG_DATABASE = {
     "Paracetamol sirup (120mg/5ml)": {
         "dnevna_mg_kg": 40, "max_dan_fiksno": 4000, "mg_u_5ml": 120, "interval": 6, 
@@ -41,10 +41,11 @@ st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="center
 st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
 st.title("⚖️ PediMed: Pedijatrijski Kalkulator Lijekova")
 
-# Trenutno vrijeme nam treba odmah na početku radi inicijalne vrijednosti
-trenutno = datetime.now()
+# Postavljamo vremensku zonu na Sarajevo da sati na serveru ne bi kasnili 2 sata
+lokalna_zona = pytz.timezone("Europe/Sarajevo")
+trenutno = datetime.now(lokalna_zona)
 
-# 1. UNOS PODATAKA WITH PERFECT ALIGNMENT (Bez markdown labele iznad, sve ide unutar inputa)
+# 1. UNOS PODATAKA WITH PERFECT ALIGNMENT
 col1, col2 = st.columns(2)
 
 with col1:
@@ -147,7 +148,6 @@ if st.button("IZRAČUNAJ"):
         odabrana_jacina = data["mg_u_jedinici"]
         
         validan_rezim_volt = None
-        # Evaluacija: da li se jačina uklapa u režim 2x dnevno ili 3x dnevno
         if min_dnevna_volt <= (odabrana_jacina * 2) <= max_dnevna_volt:
             validan_rezim_volt = {"broj_davanja": 2, "interval": 12, "opis": "2 puta dnevno (na 12 sati)"}
         elif min_dnevna_volt <= (odabrana_jacina * 3) <= max_dnevna_volt:
@@ -207,7 +207,7 @@ if st.button("IZRAČUNAJ"):
         sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg ({terapijska_ml_24h} ml)\n\n**Maksimalno (30 mg/kg):** {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)"
         
     else:
-        # Čepići (Paracetamol, Ibuprofen, Voltaren)
+        # Čepići
         if "Paracetamol" in drug_name:
             apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
         elif "Ibuprofen" in drug_name:
@@ -225,7 +225,7 @@ if st.button("IZRAČUNAJ"):
         else:
             sadrzaj_desna = f"**Unos odabranog čepića ({broj_doza}x dnevno):** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
 
-    # --- 3. PRIKAZ UGRAĐENIH STREAMLIT OKVIRA ---
+    # --- PRIKAZ OKVIRA ---
     c1, c2 = st.columns(2)
     with c1:
         with st.container(border=True):
@@ -269,7 +269,7 @@ if st.button("IZRAČUNAJ"):
         st.write("- **Opća napomena:** Ne miješati s drugim lijekovima iste aktivne tvari.")
         st.write("- U slučaju pogoršanja simptoma, odmah kontaktirati ljekara.")
 
-# --- DUGI DISCLAIMER I KONTAKT SEKCIJA ---
+# --- DISCLAIMER I KONTAKT SEKCIJA ---
 st.divider()
 with st.container():
     st.warning("⚠️ **VAŽNA NAPOMENA (DISCLAIMER):**")
