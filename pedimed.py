@@ -37,122 +37,50 @@ DRUG_DATABASE = {
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="centered")
 
-# --- MOĆAN I SIGURAN CUSTOM CSS (Popravlja problem nevidljivog teksta i prikazuje rezultate) ---
+# --- STRUGANJE I ČIŠĆENJE KONFLIKATA (Čisti i siguran CSS bez anomalija) ---
 st.markdown("""
 <style>
-    /* Prisilna svetla tema i fiksna boja teksta za sve elemente */
-    .stApp, [data-testid="stAppViewContainer"] {
-        background-color: #F4F8FA !important;
-        color: #1A202C !important;
-        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
-
-    /* Popravak za sve paragrafe, tekstove i oznake da budu tamni i vidljivi */
-    p, span, label, li, div {
-        color: #2D3748 !important;
-    }
-
-    /* Info blok na vrhu */
-    div[data-testid="stInfoBlock"] {
-        background-color: #E3F2FD !important;
-        border-left: 5px solid #1E88E5 !important;
-        border-radius: 12px !important;
-        padding: 15px !important;
-    }
-    div[data-testid="stInfoBlock"] p {
-        color: #0D47A1 !important;
-        font-weight: 500 !important;
-    }
-
-    /* Glavni naslovi */
-    h1 {
-        color: #1A365D !important;
-        font-weight: 700 !important;
-        text-align: center;
-        margin-bottom: 20px !important;
-    }
-    h2, h3 {
-        color: #2C5282 !important;
-        font-weight: 600 !important;
-        margin-top: 15px !important;
-    }
-
-    /* Kartice unosa podataka */
-    div[data-testid="stNumberInput"], div[data-testid="stSelectbox"] {
+    /* Prisilno redefinisanje baze aplikacije na stabilnu svijetlu podlogu */
+    html, body, [data-testid="stAppViewContainer"], .stApp {
         background-color: #FFFFFF !important;
-        border: 1px solid #CBD5E0 !important;
-        border-radius: 14px !important;
-        padding: 10px 15px !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.04) !important;
-    }
-    
-    /* Fiksiranje oznaka unutar unosa */
-    label[data-testid="stWidgetLabel"] p {
-        color: #2D3748 !important;
-        font-weight: 600 !important;
     }
 
-    /* Glavno dugme IZRAČUNAJ */
+    /* Najvažnije: Kompletan tekst u aplikaciji mora biti vidljiv i tamno-siv/crni */
+    p, span, label, li, h1, h2, h3, div, small {
+        color: #1A202C !important;
+    }
+
+    /* Popravak teksta unutar polja za unos i selectbox-a da ne bude crn na crnom */
+    input, select, div[role="listbox"], div[data-baseweb="select"] * {
+        color: #1A202C !important;
+        background-color: #F7FAFC !important;
+    }
+
+    /* Info i Warning blokovi (Dizajn bez mijenjanja unutrašnjeg teksta) */
+    div[data-testid="stInfoBlock"], div[data-testid="stWarningBlock"], div[data-testid="stErrorBlock"] {
+        border-radius: 10px !important;
+        padding: 15px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+    }
+
+    /* Dugme za proračun */
     div.stButton > button {
-        background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%) !important;
+        background-color: #2F855A !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        font-size: 1.1rem !important;
-        padding: 14px 40px !important;
-        border-radius: 30px !important;
+        padding: 12px 30px !important;
+        border-radius: 8px !important;
         border: none !important;
-        box-shadow: 0 4px 12px rgba(46,125,50,0.3) !important;
         width: 100% !important;
     }
-    div.stButton > button p {
+    div.stButton > button * {
         color: #FFFFFF !important;
     }
 
-    /* Popravak i stil za okvire rezultata (Columns) */
-    div[data-testid="stBlock"] {
-        background-color: #FFFFFF !important;
-        border-radius: 12px !important;
-        padding: 5px !important;
-    }
-    
-    /* Satnica i uspješni proračuni (Zelene kartice) */
-    div[data-testid="stNotification"] {
-        background-color: #E8F5E9 !important;
-        border-left: 5px solid #4CAF50 !important;
-        border-radius: 10px !important;
-        color: #1B5E20 !important;
-    }
-    div[data-testid="stNotification"] p, div[data-testid="stNotification"] strong {
-        color: #1B5E20 !important;
-    }
-
-    /* Crvene greške za subdoziranja i prekoračenja */
-    div[data-testid="stErrorBlock"] {
-        background-color: #FFEBEE !important;
-        border-left: 5px solid #D32F2F !important;
-        border-radius: 12px !important;
-    }
-    div[data-testid="stErrorBlock"] p, div[data-testid="stErrorBlock"] div {
-        color: #C62828 !important;
-        font-weight: 500 !important;
-    }
-
-    /* Žuti prozor za automatski predložene alternative */
-    div[data-testid="stWarningBlock"] {
-        background-color: #FFFDE7 !important;
-        border-left: 5px solid #FBC02D !important;
-        border-radius: 12px !important;
-    }
-    div[data-testid="stWarningBlock"] p, div[data-testid="stWarningBlock"] div {
-        color: #E65100 !important;
-        font-weight: 500 !important;
-    }
-
-    /* Linkovi u aplikaciji */
+    /* Boja za linkove */
     a {
-        color: #1565C0 !important;
+        color: #2B6CB0 !important;
         text-decoration: underline !important;
-        font-weight: 600 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -201,15 +129,14 @@ def prikazi_sve_dostupne_alternative(trenutna_tezina):
         st.write(f"🔹 **Voltaren čepići:** Adekvatna jačina je čepić od **" + " ili ".join(v_cep_ok) + "** (2 do 3 puta dnevno).")
 
 
-# --- INICIJALIZACIJA INTERFEJSA ---
+# --- INTERFEJS ---
 st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
 st.title("⚖️ PediMed Safe: Pedijatrijski Kalkulator")
 
-# Postavljanje vremenske zone za BiH
+# Vremenska zona BiH
 bih_zona = timezone(timedelta(hours=2))
 trenutno = datetime.now(bih_zona)
 
-# 1. UNOS PODATAKA
 col1, col2 = st.columns(2)
 
 with col1:
@@ -292,12 +219,12 @@ if st.button("IZRAČUNAJ"):
 
     st.divider()
     
-    # Terapijski proračun (preporučene doze)
+    # Terapijski proračun
     terapijska_mg_24h = min(weight * data["dnevna_mg_kg"], data["max_dan_fiksno"])
     broj_doza = 24 // data["interval"]
     pojedinacna_mg = terapijska_mg_24h / broj_doza
     
-    # --- LOGIKA PRORAČUNA MAKSIMALNIH GRANICA I RASPONA ---
+    # --- LOGIKA PRORAČUNA ---
     if "Paracetamol sirup" in drug_name:
         terapijska_ml_24h = round((terapijska_mg_24h * 5) / 120, 1)
         apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
@@ -348,7 +275,7 @@ if st.button("IZRAČUNAJ"):
         else:
             sadrzaj_desna = f"**Unos odabranog čepića ({broj_doza}x dnevno):** {data['mg_u_jedinici'] * broj_doza} mg\n\n**Apsolutni limit djeteta:** {round(apsolutni_max_24h, 1)} mg"
 
-    # --- PRIKAZ OKVIRA REZULTATA ---
+    # --- PRIKAZ REZULTATA ---
     c1, c2 = st.columns(2)
     with c1:
         with st.container(border=True):
@@ -362,8 +289,8 @@ if st.button("IZRAČUNAJ"):
 
     st.write("") 
 
-    # Satnica davanja doza
-    st.subheader("⏰ Plan davanja (24h) - Na bazi odabranog oblika:")
+    # Satnica
+    st.subheader("⏰ Plan davanja (24h):")
     current_time = datetime.combine(datetime.today(), start_time)
     for i in range(broj_doza):
         st.success(f"**{i+1}. doza** u **{current_time.strftime('%H:%M')}** — Doza: {plan_ispis}")
@@ -387,7 +314,7 @@ if st.button("IZRAČUNAJ"):
         st.write("- **Opća napomena:** Ne miješati s drugim lijekovima iste aktivne tvari.")
         st.write("- U slučaju pogoršanja simptoma, odmah kontaktirati ljekara.")
 
-# --- DISCLAIMER I KONTAKT SEKCIJA ---
+# --- FOOTER ---
 st.divider()
 with st.container():
     st.warning("⚠️ **VAŽNA NAPOMENA (DISCLAIMER):**")
@@ -407,8 +334,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown(
-    "<div style='font-size: 0.8em; color: #718096; text-align: center; margin-top: 20px;'>"
-    "© " + str(datetime.now().year) + " Created by <a href='https://drkarabeg.ba' target='_blank' style='color: #4A5568; text-decoration: underline;'>Karabeg dr Kemal</a> | PediMed Safe v2.0 |"
+    "<div style='font-size: 0.8em; text-align: center; margin-top: 20px; color: #1A202C !important;'>"
+    "© " + str(datetime.now().year) + " Created by <a href='https://drkarabeg.ba' target='_blank'>Karabeg dr Kemal</a> | PediMed Safe v2.0 |"
     "</div>", 
     unsafe_allow_html=True
 )
