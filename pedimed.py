@@ -62,12 +62,56 @@ with col2:
 
 data = DRUG_DATABASE[drug_name]
 
+# --- FUNKCIJA ZA AUTOMATSKO GENERISANJE ALTERNATIVA NA BAZI KILAŽE ---
+def prikazi_sve_dostupne_alternative(trenutna_tezina):
+    st.warning("📋 **Prijedlog svih adekvatnih i sigurnih alternativa iz aplikacije za težinu od " + str(trenutna_tezina) + " kg:**")
+    
+    # 1. Paracetamol sirup alternativa
+    p_mg = min((trenutna_tezina * 40) / 4, 4000 / 4)
+    p_ml = round((p_mg * 5) / 120, 1)
+    p_max_ml = round((min((trenutna_tezina * 60) / 4, 4000 / 4) * 5) / 120, 1)
+    st.write(f"🔹 **Paracetamol sirup (120mg/5ml):** Dati **{p_ml} ml** (Raspon: {p_ml} - {p_max_ml} ml) do 4 puta dnevno.")
+    
+    # 2. Neofen/Ibuprofen sirup alternativa
+    n_mg = min((trenutna_tezina * 20) / 3, 1200 / 3)
+    n_ml = round((n_mg * 5) / 100, 1)
+    n_max_ml = round((min((trenutna_tezina * 30) / 3, 1200 / 3) * 5) / 100, 1)
+    st.write(f"🔹 **Neofen / Ibuprofen sirup (100mg/5ml):** Dati **{n_ml} ml** (Raspon: {n_ml} - {n_max_ml} ml) do 3 puta dnevno.")
+    
+    # 3. Provjera Paracetamol čepića
+    p_cep_ok = []
+    for j in [80, 120, 150, 250]:
+        if (trenutna_tezina * 60 / 4) >= j >= (trenutna_tezina * 30 / 4 - 25):
+            p_cep_ok.append(f"{j}mg")
+    if p_cep_ok:
+        st.write(f"🔹 **Paracetamol čepići:** Adekvatna jačina je čepić od **" + " ili ".join(p_cep_ok) + "** (maksimalno 4 puta dnevno).")
+        
+    # 4. Provjera Ibuprofen čepića
+    i_cep_ok = []
+    min_ibu = trenutna_tezina * 20
+    max_ibu = trenutna_tezina * 30
+    if trenutna_tezina >= 6.0:
+        if min_ibu <= (60 * 3) <= max_ibu or min_ibu <= (60 * 4) <= max_ibu: i_cep_ok.append("60mg")
+        if min_ibu <= (125 * 3) <= max_ibu or min_ibu <= (125 * 4) <= max_ibu: i_cep_ok.append("125mg")
+    if i_cep_ok:
+        st.write(f"🔹 **Ibuprofen čepići:** Adekvatna jačina je čepić od **" + " ili ".join(i_cep_ok) + "** (prema rasporedu u aplikaciji).")
+
+    # 5. Provjera Voltaren čepića
+    v_cep_ok = []
+    min_volt = trenutna_tezina * 2
+    max_volt = trenutna_tezina * 3
+    if min_volt <= (12.5 * 2) <= max_volt or min_volt <= (12.5 * 3) <= max_volt: v_cep_ok.append("12,5mg")
+    if min_volt <= (25 * 2) <= max_volt or min_volt <= (25 * 3) <= max_volt: v_cep_ok.append("25mg")
+    if v_cep_ok:
+        st.write(f"🔹 **Voltaren čepići:** Adekvatna jačina je čepić od **" + " ili ".join(v_cep_ok) + "** (2 do 3 puta dnevno).")
+
+
 if st.button("IZRAČUNAJ"):
     # --- VALIDACIJA ZA IBUPROFEN ČEPIĆE 6MG ---
     if drug_name == "Ibuprofen čepići (60mg)":
         if weight < 6.0:
             st.error("❌ Lijek se ne smije primjenjivati u djece tjelesne mase manje od 6,0 kg.")
-            st.warning("⚠️ Ne smije se koristiti u dojenčadi mlađe od 3 mjeseca bez savjeta liječnika.")
+            prikazi_sve_dostupne_alternative(weight)
             st.stop()
 
     # --- DIREKTNA KLINIČKA VERIFIKACIJA I FILTRIRANJE ČEPIĆA ---
@@ -75,43 +119,14 @@ if st.button("IZRAČUNAJ"):
         min_pojedinacna_efikasna = (weight * 30) / 4
         max_pojedinacna_sigurna = (weight * 60) / 4
         odabrana_jacina = data["mg_u_jedinici"]
-        
-        # Izračun alternativne doze sirupa na licu mjesta
-        alt_para_mg = min((weight * 40) / 4, 4000 / 4)
-        alt_para_ml = round((alt_para_mg * 5) / 120, 1)
-        alt_para_max_mg = min((weight * 60) / 4, 4000 / 4)
-        alt_para_max_ml = round((alt_para_max_mg * 5) / 120, 1)
-        
-        adekvatni_cepici = []
-        if (weight * 60 / 4) >= 80 >= (weight * 30 / 4 - 15): adekvatni_cepici.append("80mg")
-        if (weight * 60 / 4) >= 120 >= (weight * 30 / 4 - 20): adekvatni_cepici.append("120mg")
-        if (weight * 60 / 4) >= 150 >= (weight * 30 / 4 - 25): adekvatni_cepici.append("150mg")
-        if (weight * 60 / 4) >= 250 >= (weight * 30 / 4 - 40): adekvatni_cepici.append("250mg")
 
-        if odabrana_jacina < min_pojedinacna_efikasna and abs(odabrana_jacina - min_pojedinacna_efikasna) > 15:
-            st.error(f"❌ **Subdoziranje! Odabrani čepić ({odabrana_jacina}mg) je preslab za težinu od {weight} kg.**")
-            if adekvatni_cepici:
-                preporuka_tekst = " ili ".join(adekvatni_cepici)
-                st.info(f"💡 **Klinički savjet:** Davanje ovog čepića neće efikasno spustiti temperaturu. Za težinu vašeg djeteta, adekvatan izbor su **Paracetamol čepići od {preporuka_tekst}**.")
+        if (odabrana_jacina < min_pojedinacna_efikasna and abs(odabrana_jacina - min_pojedinacna_efikasna) > 15) or (odabrana_jacina > max_pojedinacna_sigurna):
+            if odabrana_jacina < min_pojedinacna_efikasna:
+                st.error(f"❌ **Subdoziranje! Odabrani čepić ({odabrana_jacina}mg) je preslab za težinu od {weight} kg.**")
             else:
-                st.warning(
-                    f"💡 **Klinički savjet:** S obzirom na težinu od **{weight} kg**, fiksne doze čepića više nisu efikasne.\n\n"
-                    f"👉 **Preporučuje se prelazak na Paracetamol sirup (120mg/5ml).**\n"
-                    f"Adekvatna pojedinačna doza sirupa za ovu težinu iznosi od **{alt_para_ml} ml** (preporučeno) do maksimalno **{alt_para_max_ml} ml** po dozi (maksimalno 4 puta dnevno)."
-                )
-            st.stop()
-            
-        if odabrana_jacina > max_pojedinacna_sigurna:
-            st.error(f"❌ **Previsoka doza! Odabrani čepić ({odabrana_jacina}mg) je prejak za težinu od {weight} kg.**")
-            if adekvatni_cepici:
-                preporuka_tekst = " ili ".join(adekvatni_cepici)
-                st.info(f"💡 **Klinički savjet:** Za težinu vašeg djeteta od {weight} kg, adekvatan i siguran izbor su **Paracetamol čepići od {preporuka_tekst}**.")
-            else:
-                st.warning(
-                    f"💡 **Klinički savjet:** Odabrana doza čepića je rizična za ovu težinu.\n\n"
-                    f"👉 **Preporučuje se prelazak na Paracetamol sirup (120mg/5ml).**\n"
-                    f"Adekvatna pojedinačna doza sirupa za ovu težinu iznosi od **{alt_para_ml} ml** do maksimalno **{alt_para_max_ml} ml**."
-                )
+                st.error(f"❌ **Previsoka doza! Odabrani čepić ({odabrana_jacina}mg) je prejak za težinu od {weight} kg.**")
+                
+            prikazi_sve_dostupne_alternative(weight)
             st.stop()
 
     # --- DINAMIČKA LOGIKA ZA IBUPROFEN ČEPIĆE (3x ILI 4x DNEVNO) ---
@@ -120,37 +135,15 @@ if st.button("IZRAČUNAJ"):
         max_dnevna_ibu = weight * 30
         odabrana_jacina = data["mg_u_jedinici"]
         
-        # Izračun alternativne doze Neofen sirupa na licu mjesta (režim na 3 doze dnevno)
-        alt_neo_mg = min((weight * 20) / 3, 1200 / 3)
-        alt_neo_ml = round((alt_neo_mg * 5) / 100, 1)
-        alt_neo_max_mg = min((weight * 30) / 3, 1200 / 3)
-        alt_neo_max_ml = round((alt_neo_max_mg * 5) / 100, 1)
-        
         validan_rezim_za_odabrani = None
         if min_dnevna_ibu <= (odabrana_jacina * 3) <= max_dnevna_ibu:
             validan_rezim_za_odabrani = {"broj_davanja": 3, "interval": 8, "opis": "3 puta dnevno (na 8 sati)"}
         elif min_dnevna_ibu <= (odabrana_jacina * 4) <= max_dnevna_ibu:
             validan_rezim_za_odabrani = {"broj_davanja": 4, "interval": 6, "opis": "4 puta dnevno (na 6 sati)"}
-            
-        adekvatne_alternative = []
-        if min_dnevna_ibu <= (60 * 3) <= max_dnevna_ibu: adekvatne_alternative.append("60mg (3x dnevno)")
-        elif min_dnevna_ibu <= (60 * 4) <= max_dnevna_ibu: adekvatne_alternative.append("60mg (4x dnevno)")
-        if min_dnevna_ibu <= (125 * 3) <= max_dnevna_ibu: adekvatne_alternative.append("125mg (3x dnevno)")
-        elif min_dnevna_ibu <= (125 * 4) <= max_dnevna_ibu: adekvatne_alternative.append("125mg (4x dnevno)")
 
         if not validan_rezim_za_odabrani:
-            st.error(f"❌ **Neodgovarajuće doziranje čepića!**")
-            st.write(f"Trenutno odabrani čepić od **{odabrana_jacina}mg** ne može ispuniti siguran opseg za težinu od {weight} kg.")
-            
-            if adekvatne_alternative:
-                preporuka_ibu_tekst = " ili ".join(adekvatne_alternative)
-                st.info(f"💡 **Klinički savjet:** Za težinu vašeg djeteta, u terapeutski opseg se uklapa: **Ibuprofen čepići od {preporuka_ibu_tekst}**.")
-            else:
-                st.warning(
-                    f"💡 **Klinički savjet:** S obzirom na težinu djeteta od **{weight} kg**, fiksne doze čepića više ne odgovaraju.\n\n"
-                    f"👉 **Preporučuje se prelazak na Neofen / Ibuprofen sirup (100mg/5ml).**\n"
-                    f"Adekvatna pojedinačna doza sirupa iznosi od **{alt_neo_ml} ml** (preporučeno) do maksimalno **{alt_neo_max_ml} ml** po dozi (3 puta dnevno, na 8 sati)."
-                )
+            st.error(f"❌ **Neodgovarajuće doziranje čepića! Odabrani čepić od {odabrana_jacina}mg ne odgovara za težinu od {weight} kg.**")
+            prikazi_sve_dostupne_alternative(weight)
             st.stop()
         else:
             data["interval"] = validan_rezim_za_odabrani["interval"]
@@ -169,13 +162,8 @@ if st.button("IZRAČUNAJ"):
             validan_rezim_volt = {"broj_davanja": 3, "interval": 8, "opis": "3 puta dnevno (na 8 sati)"}
             
         if not validan_rezim_volt:
-            st.error(f"❌ **Neodgovarajuća jačina čepića!**")
-            st.write(f"Odabrani Voltaren čepić od **{odabrana_jacina}mg** izlazi iz sigurnog raspona od **2-3 mg/kg/dan** za težinu od **{weight} kg**.")
-            st.warning(
-                "💡 **Klinički savjet:** Doza ove fiksne supozitorije se ne uklapa u sigurne granice. "
-                "Molimo vas da razmotrite druge dostupne **paracetamol/ibuprofen sirupe** unutar aplikacije "
-                "kako biste dozu prilagodili djetetu bez rizika od nuspojava."
-            )
+            st.error(f"❌ **Neodgovarajuća doza! Odabrani Voltaren čepić od {odabrana_jacina}mg ne odgovara rasponu (2-3 mg/kg/dan) za težinu od {weight} kg.**")
+            prikazi_sve_dostupne_alternative(weight)
             st.stop()
         else:
             data["interval"] = validan_rezim_volt["interval"]
@@ -222,12 +210,12 @@ if st.button("IZRAČUNAJ"):
         sadrzaj_desna = f"**Preporučeno:** {round(terapijska_mg_24h, 1)} mg ({terapijska_ml_24h} ml)\n\n**Maksimalno (30 mg/kg):** {round(apsolutni_max_24h, 1)} mg ({apsolutni_max_ml_24h} ml)"
         
     else:
-        # Čepići
+        # Ako je sve u redu sa čepićima, računa se standardni ispis
         if "Paracetamol" in drug_name:
             apsolutni_max_24h = min(weight * 60, data["max_dan_fiksno"])
         elif "Ibuprofen" in drug_name:
             apsolutni_max_24h = min(weight * 30, data["max_dan_fiksno"])
-        else: # Voltaren
+        else:
             apsolutni_max_24h = min(weight * 3, data["max_dan_fiksno"])
         
         naslov_lijeva = "🔷 POJEDINAČNA DOZA ČEPIĆA:"
