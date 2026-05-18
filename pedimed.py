@@ -37,94 +37,122 @@ DRUG_DATABASE = {
 
 st.set_page_config(page_title="PediMed Safe", page_icon="⚖️", layout="centered")
 
-# --- CUSTOM CSS ZA VIZUALNI REDIZAJN (Pedijatrijski pastelni stil) ---
+# --- MOĆAN I SIGURAN CUSTOM CSS (Popravlja problem nevidljivog teksta i prikazuje rezultate) ---
 st.markdown("""
 <style>
-    /* Pozadina i fontovi cijele aplikacije */
-    .stApp {
+    /* Prisilna svetla tema i fiksna boja teksta za sve elemente */
+    .stApp, [data-testid="stAppViewContainer"] {
         background-color: #F4F8FA !important;
+        color: #1A202C !important;
         font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     }
 
-    /* Info baner dobrodošlice */
-    div[data-testid="stInfoBlock"] {
-        background-color: #E3F2FD !important;
-        color: #0D47A1 !important;
-        border-left: 5px solid #2196F3 !important;
-        border-radius: 12px !important;
-        padding: 16px !important;
+    /* Popravak za sve paragrafe, tekstove i oznake da budu tamni i vidljivi */
+    p, span, label, li, div {
+        color: #2D3748 !important;
     }
 
-    /* Glavni naslov kalkulatora */
+    /* Info blok na vrhu */
+    div[data-testid="stInfoBlock"] {
+        background-color: #E3F2FD !important;
+        border-left: 5px solid #1E88E5 !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+    }
+    div[data-testid="stInfoBlock"] p {
+        color: #0D47A1 !important;
+        font-weight: 500 !important;
+    }
+
+    /* Glavni naslovi */
     h1 {
         color: #1A365D !important;
         font-weight: 700 !important;
-        font-size: 2.2rem !important;
         text-align: center;
-        margin-bottom: 25px !important;
+        margin-bottom: 20px !important;
+    }
+    h2, h3 {
+        color: #2C5282 !important;
+        font-weight: 600 !important;
+        margin-top: 15px !important;
     }
 
-    /* Stilovi za ulazna polja (kartice sa sjenom) */
+    /* Kartice unosa podataka */
     div[data-testid="stNumberInput"], div[data-testid="stSelectbox"] {
         background-color: #FFFFFF !important;
-        border: 1px solid #E2E8F0 !important;
+        border: 1px solid #CBD5E0 !important;
         border-radius: 14px !important;
-        padding: 12px 18px 18px 18px !important;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03) !important;
-        margin-bottom: 15px !important;
+        padding: 10px 15px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.04) !important;
     }
-
-    /* Naslovi polja */
+    
+    /* Fiksiranje oznaka unutar unosa */
     label[data-testid="stWidgetLabel"] p {
         color: #2D3748 !important;
         font-weight: 600 !important;
-        font-size: 1rem !important;
     }
 
     /* Glavno dugme IZRAČUNAJ */
     div.stButton > button {
-        background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%) !important;
-        color: white !important;
+        background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%) !important;
+        color: #FFFFFF !important;
         font-weight: 700 !important;
         font-size: 1.1rem !important;
         padding: 14px 40px !important;
         border-radius: 30px !important;
         border: none !important;
-        box-shadow: 0 4px 10px rgba(76,175,80,0.3) !important;
-        transition: all 0.2s ease-in-out !important;
+        box-shadow: 0 4px 12px rgba(46,125,50,0.3) !important;
         width: 100% !important;
-        margin-top: 10px !important;
     }
-    div.stButton > button:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 6px 14px rgba(76,175,80,0.4) !important;
+    div.stButton > button p {
+        color: #FFFFFF !important;
     }
 
-    /* Rezultati - doze u satnici */
-    div[data-testid="stNotification"] {
-        border-radius: 10px !important;
-        padding: 12px 16px !important;
-        font-size: 1.05rem !important;
-    }
-
-    /* Crvene greške / Subdoziranja i prekoračenja */
-    div[data-testid="stErrorBlock"] {
-        background-color: #FFF5F5 !important;
-        color: #C53030 !important;
-        border-left: 5px solid #E53E3E !important;
+    /* Popravak i stil za okvire rezultata (Columns) */
+    div[data-testid="stBlock"] {
+        background-color: #FFFFFF !important;
         border-radius: 12px !important;
-        padding: 16px !important;
+        padding: 5px !important;
+    }
+    
+    /* Satnica i uspješni proračuni (Zelene kartice) */
+    div[data-testid="stNotification"] {
+        background-color: #E8F5E9 !important;
+        border-left: 5px solid #4CAF50 !important;
+        border-radius: 10px !important;
+        color: #1B5E20 !important;
+    }
+    div[data-testid="stNotification"] p, div[data-testid="stNotification"] strong {
+        color: #1B5E20 !important;
+    }
+
+    /* Crvene greške za subdoziranja i prekoračenja */
+    div[data-testid="stErrorBlock"] {
+        background-color: #FFEBEE !important;
+        border-left: 5px solid #D32F2F !important;
+        border-radius: 12px !important;
+    }
+    div[data-testid="stErrorBlock"] p, div[data-testid="stErrorBlock"] div {
+        color: #C62828 !important;
         font-weight: 500 !important;
     }
 
     /* Žuti prozor za automatski predložene alternative */
     div[data-testid="stWarningBlock"] {
-        background-color: #FFFDF5 !important;
-        color: #975A16 !important;
-        border-left: 5px solid #ECC94B !important;
+        background-color: #FFFDE7 !important;
+        border-left: 5px solid #FBC02D !important;
         border-radius: 12px !important;
-        padding: 18px !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02) !important;
+    }
+    div[data-testid="stWarningBlock"] p, div[data-testid="stWarningBlock"] div {
+        color: #E65100 !important;
+        font-weight: 500 !important;
+    }
+
+    /* Linkovi u aplikaciji */
+    a {
+        color: #1565C0 !important;
+        text-decoration: underline !important;
+        font-weight: 600 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -173,15 +201,15 @@ def prikazi_sve_dostupne_alternative(trenutna_tezina):
         st.write(f"🔹 **Voltaren čepići:** Adekvatna jačina je čepić od **" + " ili ".join(v_cep_ok) + "** (2 do 3 puta dnevno).")
 
 
-# --- ZAGLAVLJE STRANICE ---
+# --- INICIJALIZACIJA INTERFEJSA ---
 st.info("👋 **Dobrodošli na PediMed.** Ovaj kalkulator je kreiran da vam olakša precizno doziranje lijekova za vaše najmlađe.")
 st.title("⚖️ PediMed Safe: Pedijatrijski Kalkulator")
 
-# Postavljanje vremenske zone za BiH (+2 sata ručno bez pytz ekstenzija)
+# Postavljanje vremenske zone za BiH
 bih_zona = timezone(timedelta(hours=2))
 trenutno = datetime.now(bih_zona)
 
-# 1. UNOS PODATAKA WITH PERFECT ALIGNMENT
+# 1. UNOS PODATAKA
 col1, col2 = st.columns(2)
 
 with col1:
@@ -379,8 +407,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown(
-    "<div style='font-size: 0.8em; color: gray; text-align: center; margin-top: 20px;'>"
-    "© " + str(datetime.now().year) + " Created by <a href='https://drkarabeg.ba' target='_blank' style='color: gray; text-decoration: underline;'>Karabeg dr Kemal</a> | PediMed Safe v2.0 |"
+    "<div style='font-size: 0.8em; color: #718096; text-align: center; margin-top: 20px;'>"
+    "© " + str(datetime.now().year) + " Created by <a href='https://drkarabeg.ba' target='_blank' style='color: #4A5568; text-decoration: underline;'>Karabeg dr Kemal</a> | PediMed Safe v2.0 |"
     "</div>", 
     unsafe_allow_html=True
 )
